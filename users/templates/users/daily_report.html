@@ -1,0 +1,178 @@
+{% extends "users/base.html" %}
+{% block title %}ثبت گزارش روزانه{% endblock %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f4f6f9;
+        font-family: 'Vazirmatn', sans-serif;
+    }
+
+    .form-container {
+        background-color: #fff;
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-select,
+    .form-control {
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        background-color: #f5f5f5;
+        border: 1px solid #e0e0e0;
+        transition: background-color 0.2s ease;
+    }
+
+    .form-select:focus,
+    .form-control:focus {
+        background-color: #fff;
+        border-color: #007bff;
+        outline: none;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border: none;
+        border-radius: 10px;
+        padding: 0.7rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+        max-width: 200px;
+        align-self: flex-end;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .report-card {
+        background-color: #fff;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .report-card:hover {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .report-content {
+        background-color: #f9f9f9;
+        padding: 0.75rem;
+        border-radius: 10px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    .btn-edit {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .form-container {
+            padding: 1.25rem;
+        }
+
+        .btn-primary {
+            width: 100%;
+            max-width: none;
+        }
+
+        .report-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-edit {
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+function editReport(id, title, content) {
+    document.getElementById('id_title').value = title;
+    document.getElementById('id_content').value = content;
+
+    let hiddenInput = document.getElementById('report-id');
+    if (!hiddenInput) {
+        hiddenInput = document.createElement("input");
+        hiddenInput.type = "hidden";
+        hiddenInput.name = "report_id";
+        hiddenInput.id = "report-id";
+        document.querySelector("form").appendChild(hiddenInput);
+    }
+    hiddenInput.value = id;
+
+    document.querySelector("button[type=submit]").innerText = "ویرایش گزارش";
+}
+</script>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <h2 class="text-center text-dark mb-4">ثبت گزارش روزانه</h2>
+
+            <div class="form-container mb-5 d-flex flex-column">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label" for="id_title">عنوان گزارش</label>
+                        {{ form.title|add_class:"form-select" }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="id_content">محتوای گزارش</label>
+                        {{ form.content|add_class:"form-control" }}
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">ثبت گزارش</button>
+                    </div>
+                </form>
+            </div>
+
+            <h4 class="text-secondary text-center mb-4">گزارش‌های شما</h4>
+
+            {% for report in reports %}
+            <div class="report-card">
+                <div class="report-header">
+                    <strong class="text-primary">{{ report.date }} - {{ report.title }}</strong>
+                    {% if report.id == last_report_id %}
+                    <button class="btn btn-sm btn-outline-secondary btn-edit"
+                            onclick="editReport('{{ report.id }}', '{{ report.title }}', `{{ report.content|escapejs }}`)">
+                        ویرایش
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="report-content">
+                    {{ report.content }}
+                </div>
+                <small class="text-muted d-block mt-2">ایجاد شده در: {{ report.created_at }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

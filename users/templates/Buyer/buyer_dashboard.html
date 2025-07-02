@@ -1,0 +1,122 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block title %}{{ title }}{% endblock title %}
+{% block content %}
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <title>داشبورد مشتریان</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container mt-4">
+
+    <h2 class="mb-4 text-center">📊 داشبورد مشتریان</h2>
+
+    <div class="row">
+        <!-- مشتریان برتر -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">🏆 مشتریان برتر</div>
+                <ul class="list-group list-group-flush">
+                    {% for buyer in top_buyers %}
+                        <li class="list-group-item">
+                            {{ buyer.buyer__first_name }} {{ buyer.buyer__last_name }} - تعداد خرید: {{ buyer.total_purchases }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- محصولات محبوب مشتریان -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">💡 بیشترین محصول خریداری‌شده</div>
+                <ul class="list-group list-group-flush">
+                    {% for item in top_products %}
+                        <li class="list-group-item">
+                            {{ item.buyer__name }}: {{ item.top_product_name }} ({{ item.top_product_amount }})
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- مشتریان بدون خرید -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">🕸 مشتریان بدون خرید</div>
+                <ul class="list-group list-group-flush">
+                    {% for buyer in inactive_buyers %}
+                        <li class="list-group-item">
+                            {{ buyer.first_name }} {{ buyer.last_name }}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">همه مشتریان خرید داشته‌اند.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- مشتریان وفادار -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">❤️ مشتریان وفادار</div>
+                <ul class="list-group list-group-flush">
+                    {% for buyer in loyal_buyers %}
+                        <li class="list-group-item">
+                            {{ buyer.buyer__first_name }} {{ buyer.buyer__last_name }} - تعداد خرید: {{ buyer.total_purchases }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- نمودار -->
+    <div class="card mt-4 shadow">
+        <div class="card-header bg-dark text-white">📈 نمودار تعداد خرید مشتریان برتر</div>
+        <div class="card-body">
+            <canvas id="buyersChart" height="100"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('buyersChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'تعداد خرید',
+                data: {{ chart_data|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'تعداد خرید'
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
+{% endblock content %}

@@ -1,0 +1,548 @@
+{% extends "stone_flow.html" %}
+
+{% block title %} Home Page {% endblock title %}
+{% block content2 %}
+
+{% load static %}
+
+<style>
+    /* استایل‌های جدول و دکمه‌ها (همان‌طور که قبلاً داشتید) */
+    /* ... (می‌توانید استایل‌های قبلی‌تان را قرار دهید) */
+</style>
+
+
+
+<script>
+
+
+    function toggleSubmaterials(id) {
+        var submaterials = document.getElementById(id);
+        if (submaterials.style.display === "none" || submaterials.style.display === "") {
+            submaterials.style.display = "block";
+        } else {
+            submaterials.style.display = "none";
+        }
+    }
+
+    function filterMaterials() {
+        const input = document.getElementById('search-bar');
+        const filter = input.value.toLowerCase();
+        const cards = document.querySelectorAll('.card');
+        let hasVisibleItem = false;
+
+        cards.forEach(card => {
+            const cardText = card.innerText.toLowerCase();
+            const submaterials = card.querySelector('.submaterials');
+
+            if (cardText.includes(filter)) {
+                card.style.display = "";  // Show the card
+                hasVisibleItem = true;
+
+                if (submaterials) {
+                    submaterials.style.display = "block";  // Show submaterials
+                    const subCards = submaterials.querySelectorAll('.submaterials .card');
+
+                    subCards.forEach(subCard => {
+                        const subCardText = subCard.innerText.toLowerCase();
+                        if (subCardText.includes(filter)) {
+                            subCard.style.display = "";  // Show subCard if it matches
+                        } else {
+                            subCard.style.display = "none";  // Hide subCard if it doesn't match
+                        }
+                    });
+                }
+            } else {
+                card.style.display = "none";  // Hide the card
+                if (submaterials) {
+                    submaterials.style.display = "none";  // Hide submaterials
+                    
+                }
+            }
+        });
+
+    }
+
+    function handleSearchInput() {
+        const input = document.getElementById('search-bar');
+        const value = input.value.trim();
+        
+        // Close all submaterials when search bar is cleared
+        if (value === "") {
+            const allSubmaterials = document.querySelectorAll('.submaterials');
+            allSubmaterials.forEach(submaterials => {
+                submaterials.style.display = "none";
+            });
+
+            // Show all cards when search bar is cleared
+            const allCards = document.querySelectorAll('.card');
+            allCards.forEach(card => {
+                card.style.display = "";  // Show all cards
+            });
+        }
+
+        // Apply filter regardless of whether search bar is cleared or not
+        filterMaterials();
+    }
+
+    function closeAllTabs() {
+        const allSubmaterials = document.querySelectorAll('.submaterials');
+        allSubmaterials.forEach(submaterials => {
+            submaterials.style.display = "none";
+        });
+    }
+
+
+
+
+
+
+    function changeValue(inputId, increment) {
+    const input = document.getElementById(inputId);
+    let value = parseFloat(input.value) || 0;
+    value += increment;
+    if (value < 0) {
+      value = 0; // Prevent negative values
+    }
+    input.value = value.toFixed(1);
+  }
+
+    // Disable the submit button initially
+    function enableSubmitButton() {
+        const warehouseSelect = document.getElementById('warehouse');
+        const submitBtn = document.getElementById('submit-btn');
+
+        if (warehouseSelect.value !== "") {
+            submitBtn.disabled = false;
+        }
+    }
+
+
+
+
+
+
+    function handleSubmit(event) {
+        event.preventDefault(); // جلوگیری از ارسال فرم
+
+        const inputs = document.querySelectorAll('.digit-input');
+        let materials = [];
+        inputs.forEach(input => {
+            const value = parseFloat(input.value);
+            if (value > 0) {
+                const materialName = input.name;
+                materials.push({ name: materialName, value: value });
+            }
+        });
+
+        if (materials.length === 0) {
+            alert("No items greater than zero were selected.");
+            return false; // جلوگیری از ارسال فرم
+        }
+
+
+
+        const receiptNumber = document.getElementById('receipt_number').value.trim();
+
+        if (receiptNumber === "") {
+            alert("لطفاً شماره فیش را وارد کنید.");
+            return false;
+        }
+
+        // چک عدد صحیح بودن
+        if (!/^\d+$/.test(receiptNumber)) {
+            alert("شماره فیش باید یک عدد صحیح باشد.");
+            return false;
+        }
+
+
+
+
+
+
+
+
+        const warehouseSelect = document.getElementById('warehouse');
+        const warehouseName = warehouseSelect.options[warehouseSelect.selectedIndex].text;
+
+        const confirmMessage = `شما در حال اضافه کردن موارد زیر به انبار ${warehouseName} هستید :  \n` + 
+                            materials.map(m => `${m.name}: ${m.value}`).join('\n');
+
+        if (confirm(confirmMessage)) {
+            // اگر فرم واقعی ارسال می‌شود (بدون AJAX)
+            event.target.submit();
+
+            // یا اگر از AJAX استفاده می‌کنی، اینجا ارسال AJAX را بگذار و در صورت موفقیت ریدایرکت کن
+
+            // مثال فرضی:
+            /*
+            $.post('/your-url/', $('#your-form').serialize(), function(response){
+                if(response.success){
+                    alert('مقادیر با موفقیت ثبت شد');
+                    window.location.href = "{% url 'success_page' %}";
+                }
+            });
+            */
+        } else {
+            return false; // کاربر لغو کرد، ارسال نکن
+        }
+    }
+
+
+
+
+
+
+
+    // Change value function for increment/decrement buttons
+    function changeValue(inputId, increment) {
+        const input = document.getElementById(inputId);
+        let value = parseFloat(input.value) || 0;
+        value += increment;
+        if (value < 0) {
+        value = 0; // Prevent negative values
+        }
+        input.value = value.toFixed(1);
+    }
+
+
+
+    // document.addEventListener('DOMContentLoaded', function() {
+    // const form = document.querySelector('form');
+
+
+    // form.addEventListener('submit', function(event) {
+    //     event.preventDefault();
+
+    //     // Show success popup (can use Bootstrap modal or simple alert)
+    //     // alert('مقادیر مورد نظر با موفقیت اضافه گردید')
+
+    //     // Wait for a few seconds (e.g., 2 seconds) then redirect
+    //     setTimeout(function() {
+    //         window.location.href = "{% url 'success_page' %}";
+    //     }, 2000);  // 2-second delay
+    //     });
+    // });
+
+
+
+
+    let videoStream = null;
+    function openCamera() {
+    const video = document.getElementById('video');
+    const captureBtn = document.getElementById('capture-btn');
+    const constraints = {
+        video: {
+            facingMode: "environment", // استفاده از دوربین پشت
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+        }
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+            video.srcObject = stream;
+            video.style.display = "block";
+            captureBtn.style.display = "block";
+        })
+        .catch(err => {
+            alert("عدم دسترسی به دوربین: " + err);
+        });
+}
+
+    function captureImage() {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const capturedImage = document.getElementById('capturedImage');
+        // const submitBtn = document.getElementById('submit-btn');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL('image/png');
+        capturedImage.src = imageData;
+        capturedImage.style.display = "block";
+        video.style.display = "none";
+
+        document.getElementById('captured_image').value = imageData;
+        // submitBtn.style.display = "block";
+
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+    }
+
+
+
+
+
+    document.getElementById('cameraInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const img = document.getElementById('preview');
+                img.src = URL.createObjectURL(file);
+                img.style.display = "block";
+            }
+        });
+
+
+
+
+
+</script>
+
+
+
+
+
+
+
+<body>
+
+<div class="container-fluid p-0 m-0">  
+    <div class="card page-title-card shadow-lg rounded-lg p-4 mb-4">
+        <h1 class="page-title">حواله معدن</h1>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="user-info">
+            <div class="avatar">
+                {{ request.user.username|first|upper }} 
+            </div>
+            <div class="user-details">
+                <p><strong>کاربر:</strong> {{ request.user.username }}</p>
+                <p><strong>سمت:</strong> {{ request.user.profile.job_position.name }}</p>
+            </div>
+        </div>
+
+
+    <!-- Search Bar with Close All Tabs Button -->
+    <div class="mb-4 d-flex align-items-center">
+        <input type="text" id="search-bar" oninput="handleSearchInput()" class="form-control" placeholder="جستجو بر اساس نام یا توضیحات...">
+        <button type="button" onclick="closeAllTabs()" class="btn btn-light ms-2" style="margin-right: 5px;">
+            <i class="fa-solid fa-refresh"></i> <!-- Refresh -->
+        </button>
+    </div>
+
+
+
+<!-- 
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>نام سنگ</th>
+                        <th>واحد</th>
+                        <th>وزن</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usage in material_usages %}
+                    <tr>
+                        <td>
+                            {% if usage.image %}
+                                <img src="{{ usage.image.url }}" alt="{{ usage.name }}" style="width: 56px; height: 56px; object-fit: cover; border-radius: 4px; margin-left: 5px;">
+                            {% endif %}
+                            {{ usage.name }}
+                        </td>
+                        <td>{{ usage.unit }}</td>
+                        {% if not is_confirmed %}
+                        <td>
+                            <input type="number" name="materials_sent[]" value="{{ usage.1.quantity_used|floatformat:"-4" }}" class="text-center" step="any">
+                            <input type="hidden" name="materials_names[]" value="{{ usage.name }}">
+                        </td>
+                        {% else %}
+                        <td>{{ usage.1.step1_quantity|floatformat:"-4" }}</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div> -->
+
+
+
+        <!-- Materials -->
+        <div>
+           {% for mother_material in mother_materials %}
+                <div class="card p-2 mb-3">
+                    <a href="javascript:void(0);" onclick="toggleSubmaterials('submaterials-{{ mother_material.id }}')" style="text-decoration: none; color: inherit;">
+                        <div class="d-flex align-items-center">
+                            {% if mother_material.image %}
+                            <div>
+                                <img src="{{ mother_material.image.url }}" alt="{{ mother_material.name }}" style="max-width: 100px; max-height: 100px;  margin-left: 10px;margin-right: 10px;">
+                            </div>
+                            {% endif %}
+                            <div>
+                                    <strong>{{ mother_material.describe }}</strong> : {{ mother_material.name }}
+                            </div>
+                        </div>
+                    </a>
+
+                    <div id="submaterials-{{ mother_material.id }}" class="submaterials mt-2" style="display: none;">
+                        {% for field in mother_material.mother_material.all %}
+                            <div class="col mt-2">
+                                <div class="card shadow-sm border rounded-lg">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            {% if field.image %}
+                                                <!-- <img src="{{ field.image.url }}" alt="{{ field.name }}"
+                                                    class="img-thumbnail mr-3" style="width: 60px; height: 60px; object-fit: cover;"> -->
+
+
+                                            <div>
+                                                <img src="{{ field.image.url }}" alt="{{ field.name }}" style="max-width: 100px; max-height: 100px;  margin-left: 10px;margin-right: 10px;">
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-1">  {{ mother_material.describe }} |  {{ field.describe }}: {{ field.name }}</h6>
+                                            </div>
+                                        </div>
+
+                                        <div class="input-wrapper mt-2">
+                                            <button type="button" class="btn btn-decrement" onclick="changeValue('{{ field.id }}_input', -1)">-</button>
+                                            <input class="form-control digit-input d-inline-block" type="text" step="1"
+                                                id="{{ field.id }}_input" name="{{ field.name }}" value="0"
+                                                style="width: 100px; display: inline-block;">
+                                            <button type="button" class="btn btn-increment" onclick="changeValue('{{ field.id }}_input', 1)">+</button>
+                                            <span class="input-group-text d-inline-block ml-2">{{ field.unit }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+
+
+
+
+        <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="full_weight" class="form-label">وزن پر (کیلوگرم)</label>
+            <input type="number" class="form-control" name="full_weight" id="full_weight" required step="any">
+        </div>
+        <div class="col-md-4">
+            <label for="empty_weight" class="form-label">وزن خالی (کیلوگرم)</label>
+            <input type="number" class="form-control" name="empty_weight" id="empty_weight" required step="any">
+        </div>
+        <div class="col-md-4">
+            <label for="net_weight" class="form-label">وزن خالص (کیلوگرم)</label>
+            <input type="number" class="form-control" name="net_weight" id="net_weight" required step="any">
+        </div>
+        </div>
+
+
+
+        
+        <!-- دکمه کنترل دوربین -->
+        <button type="button" id="cameraBtn" class="btn btn-primary">باز کردن دوربین</button>
+
+        <!-- ویدئو و canvas برای گرفتن عکس -->
+        <div style="margin-top: 15px;">
+            <video id="video" width="320" height="240" autoplay muted style="display:none; border:1px solid #ccc; border-radius:8px;"></video>
+            <canvas id="canvas" width="320" height="240" style="display:none; border:1px solid #ccc; border-radius:8px;"></canvas>
+        </div>
+
+        <!-- فیلد مخفی برای ارسال عکس -->
+        <input type="hidden" id="image_data" name="image_data" />
+
+        {% if can_submit %}
+            {% if not is_confirmed %}
+            <div class="text-end mt-3">
+                <button type="submit" class="btn btn-primary btn-sm">ثبت درخواست</button>
+            </div>
+            {% else %}
+            <div class="confirmation-bar">
+                <i class="fas fa-check-circle"></i>
+                تأیید شده توسط {{ is_confirmed.confirmed_by.user.username }}
+                <a href="{% url 'edit_request' order_id step_number %}" class="btn btn-warning btn-sm">ویرایش</a>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="confirmation-bar">
+                {% if is_confirmed %}
+                <i class="fas fa-check-circle"></i>
+                تأیید شده توسط  {{ is_confirmed.confirmed_by.user.username }}
+                {% else %}
+                <i class="fas fa-error-circle"></i>
+                دسترسی ندارید در انتظار تایید
+                {% endif %}
+            </div>
+        {% endif %}
+    </form>
+
+</div>
+
+</body>
+
+<script>
+    const cameraBtn = document.getElementById('cameraBtn');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const imageInput = document.getElementById('image_data');
+    let stream = null;
+    let cameraOn = false;
+
+    cameraBtn.addEventListener('click', async () => {
+        if (!cameraOn) {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                canvas.style.display = 'none';
+                cameraBtn.textContent = 'گرفتن عکس';
+                cameraOn = true;
+            } catch (error) {
+                alert('دسترسی به دوربین ممکن نیست: ' + error);
+            }
+        } else {
+            // گرفتن عکس
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // نمایش عکس و مخفی کردن ویدئو
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+
+            // قطع کردن دوربین
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+
+            cameraBtn.textContent = 'باز کردن دوربین';
+            cameraOn = false;
+
+            // مقدار Base64 عکس را داخل input مخفی قرار بده
+            const imageDataUrl = canvas.toDataURL('image/png');
+            imageInput.value = imageDataUrl;
+
+            console.log('Captured Image Data URL set to hidden input');
+        }
+    });
+
+
+
+
+document.getElementById('full_weight').addEventListener('input', updateNetWeight);
+document.getElementById('empty_weight').addEventListener('input', updateNetWeight);
+
+function updateNetWeight() {
+    const full = parseFloat(document.getElementById('full_weight').value) || 0;
+    const empty = parseFloat(document.getElementById('empty_weight').value) || 0;
+    const net = full - empty;
+    document.getElementById('net_weight').value = net > 0 ? net.toFixed(1) : 0;
+}
+
+
+
+
+</script>
+
+{% endblock %}

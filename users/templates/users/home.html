@@ -1,0 +1,204 @@
+{% extends "users/base.html" %}
+{% block title %}صفحه اصلی{% endblock title %}
+
+{% block content %}
+<style>
+    .modern-jumbotron {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 20px;
+        padding: 40px;
+        margin-top: 40px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .modern-jumbotron h1 {
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .modern-jumbotron p.lead {
+        font-size: 1.25rem;
+        margin-bottom: 30px;
+    }
+
+    .btn-lg {
+        padding: 12px 24px;
+        font-size: 1.1rem;
+        margin: 8px;
+        border-radius: 12px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .btn-lg:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        .modern-jumbotron {
+            padding: 30px 20px;
+        }
+
+        .btn-lg {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="container">
+    <div class="modern-jumbotron">
+        <h1 class="display-5">👋 خوش آمدید، {{ user.profile.first_name|default:"مهمان" }}</h1>
+        <p class="lead">این سامانه برای <strong>{{ company_name }}</strong> جهت استفاده از ابزارهای توسعه‌یافته ایجاد شده است.</p>
+        <hr>
+        {% if user.is_authenticated %}
+            <form id="logout-form" method="POST" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-box-arrow-right"></i> خروج
+                </button>
+            </form>
+
+            <button id="subscribe-btn" class="btn btn-outline-success btn-lg">
+                <i class="bi bi-bell"></i> فعال‌سازی اعلان‌ها
+            </button>
+
+            <button id="send-notif-btn" class="btn btn-outline-warning btn-lg">
+                <i class="bi bi-send"></i> ارسال اعلان تستی
+            </button>
+        {% else %}
+            <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button">
+                <i class="bi bi-box-arrow-in-right"></i> ورود
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+        <div id="notif-toast" class="toast align-items-center text-white bg-success border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="notif-toast-body">اعلان فعال شد</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Push Notification Script (end of page) -->
+<script>
+    const vapidPublicKey = "{{ vapid_public_key }}";
+    console.log("VAPID key from backend:", vapidPublicKey);
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = atob(base64);
+        return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+    }
+
+    function showToast(message, success = true) {
+        const toastEl = document.getElementById('notif-toast');
+        const toastBody = document.getElementById('notif-toast-body');
+        toastBody.textContent = message;
+        toastEl.className = `toast align-items-center text-white ${success ? 'bg-success' : 'bg-danger'} border-0`;
+        new bootstrap.Toast(toastEl).show();
+    }
+
+    async function checkExistingSubscription() {
+        if (!('serviceWorker' in navigator)) return;
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) return;
+
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+            document.getElementById('subscribe-btn').classList.add('btn-success');
+            document.getElementById('subscribe-btn').innerHTML = '<i class="bi bi-bell-fill"></i> اعلان فعال است';
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        console.log("DOM fully loaded");
+
+        await checkExistingSubscription();
+
+        const subscribeBtn = document.getElementById('subscribe-btn');
+        const sendNotifBtn = document.getElementById('send-notif-btn');
+
+        if (subscribeBtn) {
+            console.log("Subscribe button found");
+
+            subscribeBtn.addEventListener('click', async () => {
+                console.log("Subscribe button clicked");
+
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    showToast("مرورگر شما از اعلان‌ها پشتیبانی نمی‌کند", false);
+                    return;
+                }
+
+                try {
+                    const registration = await navigator.serviceWorker.register('sw.js');
+                    console.log("Service Worker registered");
+
+                    const permission = await Notification.requestPermission();
+
+                    if (permission !== "granted") {
+                        showToast("دسترسی اعلان رد شد", false);
+                        return;
+                    }
+
+                    const existingSubscription = await registration.pushManager.getSubscription();
+
+                    const newSubscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+                    });
+
+                    const res = await fetch('/subscribe/', {
+                        headers: {
+                            method: 'POST',
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify(newSubscription)
+                    });
+
+                    if (res.ok) {
+                        showToast("اعلان با موفقیت فعال شد 🎉");
+                        subscribeBtn.classList.add('btn-success');
+                        subscribeBtn.innerHTML = '<i class="bi bi-bell-fill"></i> اعلان فعال است';
+                    } else {
+                        showToast("ذخیره‌سازی اشتراک موفق نبود", false);
+                    }
+                } catch (error) {
+                    console.error("Subscription error:", error);
+                    showToast("خطا در فعال‌سازی اعلان", false);
+                }
+            });
+        } else {
+            console.warn("Subscribe button not found");
+        }
+
+        if (sendNotifBtn) {
+            
+            sendNotifBtn.addEventListener('click', async () => {
+                try {
+                    const res = await fetch('/send-test-notification/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    });
+
+                    if (res.ok) {
+                        showToast("اعلان تستی ارسال شد ✅");
+                    } else {
+                        showToast("ارسال اعلان تستی ناموفق بود", false);
+                    }
+                } catch (err) {
+                    console.error("Notification send failed:", err);
+                    showToast("خطا در ارسال اعلان", false);
+                }
+            });
+        }
+    });
+</script>
+{% endblock content %}

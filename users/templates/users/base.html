@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>سنگ KBC</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/all.min.js' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="icon" href="{% static 'icons/logo.png' %}" type="image/x-icon" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Vazirmatn', sans-serif;
+      /* بکگراند شما اینجا تغییر نمی‌کند */
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 250px;
+      height: 100%;
+      background-color: rgba(33, 37, 41, 0.85); /* پس‌زمینه شفاف تیره */
+      padding-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .sidebar img {
+      width: 140px;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      color: #fff;
+      text-decoration: none;
+      padding: 12px 20px;
+      display: block;
+      width: 100%;
+      text-align: right;
+      transition: background 0.3s;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 16px;
+    }
+
+    .sidebar a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .main-content {
+      margin-right: 250px;
+      padding: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        justify-content: start;
+        overflow-x: auto;
+        padding: 10px;
+        background-color: rgba(33, 37, 41, 0.95);
+        box-shadow: none;
+      }
+
+      .sidebar img {
+        display: none;
+      }
+
+      .sidebar a {
+        font-size: 14px;
+        padding: 10px 15px;
+        white-space: nowrap;
+        text-align: center;
+      }
+
+      .main-content {
+        margin-right: 0;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <a href="/">
+    <img src="{% static 'icons/logo.svg' %}" alt="لوگو KBC" />
+    </a>
+
+    <a href="/tools"><i class="fas fa-tools me-2"></i> ابزارها</a>
+    <a href="/profile/{{ user.id }}/register_entry/"><i class="fas fa-list me-2"></i> ثبت تردد</a>
+    <a href="/profile/{{ user.id }}/history_entry/"><i class="fas fa-list-alt me-2"></i> نمایش کارکرد</a>
+    <a href="/profile"><i class="fas fa-user-circle me-2"></i> صفحه کاربر</a>
+    <a href="/stone_flow/create_coope"><i class="fas fa-plus-circle me-2"></i> ایجاد کوپ</a>
+    <a href="/stone_flow/coops"><i class="fas fa-cubes me-2"></i> کوپ‌های موجود</a>
+    <a href="/stone_flow/dashboard"><i class="fas fa-chart-line me-2"></i> داشبورد</a>
+    <a href="/profile/store_add/"><i class="fas fa-plus me-2"></i> افزودن کالا</a>
+    <a href="/profile/store_take"><i class="fas fa-minus me-2"></i> خروج کالا</a>
+    <a href="/profile/store_product"><i class="fas fa-industry me-2"></i> تولید کالا</a>
+    <a href="/profile/store"><i class="fas fa-box-open me-2"></i> موجودی</a>
+    <a href="/profile/store_log"><i class="fas fa-history me-2"></i> تاریخچه</a>
+    <a href="/profile/create_material"><i class="fas fa-box me-2"></i> تعریف کالای جدید</a>
+
+<a href="/mines"><i class="bi bi-minecart-loaded me-2"></i> معادن</a>
+
+
+  </div>
+
+  <!-- Main content -->
+  <div class="main-content">
+    {% block content %}
+    <!-- محتوای صفحه شما -->
+    {% endblock content %}
+  </div>
+
+  <!-- Scripts -->
+  <script src="{% static 'js/jquery-3.5.1.slim.min.js' %}"></script>
+  <script src="{% static 'js/popper.min.js' %}"></script>
+  <script src="{% static 'js/bootstrap.min.js' %}"></script>
+  <script src="{% static 'js/all.min.js' %}"></script>
+</body>
+</html>

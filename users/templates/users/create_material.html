@@ -1,0 +1,98 @@
+{% extends "users/base.html" %}
+{% block title %} Home Page {% endblock title %}
+{% block content %}
+
+{% load static %}
+
+<style>
+    .main {
+        width: 100%;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 0 16px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .form-container {
+        width: 100%;
+        max-width: 500px;
+        background: #ffffff;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-container form input,
+    .form-container form textarea,
+    .form-container form select {
+        width: 100%;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 1rem;
+        background-color: #f9f9f9;
+        transition: 0.3s ease-in-out;
+    }
+
+    .form-container form input:focus,
+    .form-container form textarea:focus,
+    .form-container form select:focus {
+        background-color: #fff;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    select {
+        direction: rtl;
+        text-align: right;
+        font-family: 'Vazirmatn', sans-serif;
+        padding: 10px 12px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        width: 100%;
+        min-height: fit-content;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 576px) {
+        .btn-block {
+            margin-top: 12px;
+        }
+    }
+
+    .errorlist {
+        color: red;
+        font-size: 0.875rem;
+        margin-bottom: 10px;
+    }
+
+    label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+    }
+</style>
+
+<div class="main">
+    <div class="form-container">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                <div>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="errorlist">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <input type="submit" class="btn btn-primary w-100 mt-3" value="ثبت اطلاعات">
+        </form>
+    </div>
+</div>
+
+{% endblock %}

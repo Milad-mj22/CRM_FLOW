@@ -1,0 +1,87 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/store.css' %}">
+<style>
+    .card {
+        border-radius: 16px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    .list-group-item {
+        padding: 1rem 1.5rem;
+        transition: background-color 0.3s ease;
+    }
+
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .buyer-info {
+        line-height: 1.6;
+    }
+
+    .btn-add {
+        border-radius: 10px;
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .btn-edit {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+        .btn-add {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-edit {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h2 class="text-right mb-2">لیست خریداران</h2>
+        <a href="{% url 'add_buyer' %}" class="btn btn-success btn-add">افزودن خریدار جدید</a>
+    </div>
+
+    {% if buyers %}
+        <div class="card">
+            <ul class="list-group list-group-flush">
+                {% for buyer in buyers %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+                        <div class="buyer-info w-75 text-right">
+                            <strong>{{ buyer.first_name }} {{ buyer.last_name }}</strong><br>
+                            <small class="text-muted">شماره تماس: {{ buyer.phone_number }}</small><br>
+                            {% if buyer.nationality %}
+                                <small class="text-muted">ملیت: {{ buyer.nationality.name }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2 mt-md-0">
+                            <a href="{% url 'edit_buyer' buyer.id %}" class="btn btn-primary btn-edit">ویرایش</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <p class="text-muted text-center mt-4">هیچ خریداری ثبت نشده است.</p>
+    {% endif %}
+</div>
+{% endblock content %}
