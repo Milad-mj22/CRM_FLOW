@@ -3,28 +3,155 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import Driver, CarModel
 
+from django import forms
+from django.contrib.auth.models import User
+from .models import Driver
+
+
+
+
+PERSIAN_LETTERS = [
+    ('الف', 'الف'), ('ب', 'ب'), ('پ', 'پ'), ('ت', 'ت'),
+    ('ث', 'ث'), ('ج', 'ج'), ('چ', 'چ'), ('د', 'د'),
+    ('ر', 'ر'), ('ز', 'ز'), ('س', 'س'), ('ص', 'ص'),
+    ('ط', 'ط'), ('ق', 'ق'), ('ک', 'ک'), ('گ', 'گ'),
+    ('ل', 'ل'), ('م', 'م'), ('ن', 'ن'), ('و', 'و'),
+    ('ه', 'ه'), ('ی', 'ی'),
+]
+
+class LicensePlateWidget(forms.MultiWidget):
+    def __init__(self, attrs=None):
+        widgets = [
+            forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'دو رقم اول', 'maxlength': '2'}),
+            forms.Select(choices=PERSIAN_LETTERS, attrs={'class': 'form-select'}),
+            forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'سه رقم وسط', 'maxlength': '3'}),
+            forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'دو رقم آخر', 'maxlength': '2'}),
+        ]
+        super().__init__(widgets, attrs)
+
+    def decompress(self, value):
+        if value:
+            parts = value.split('-')
+            if len(parts) == 4:
+                return parts
+        return ['', '', '', '']
+    
+
+class LicensePlateField(forms.MultiValueField):
+    def __init__(self, *args, **kwargs):
+        fields = [
+            forms.CharField(max_length=2),
+            forms.ChoiceField(choices=PERSIAN_LETTERS),
+            forms.CharField(max_length=3),
+            forms.CharField(max_length=2),
+        ]
+        super().__init__(fields=fields, widget=LicensePlateWidget(), *args, **kwargs)
+
+
+
+    def compress(self, data_list):
+        if data_list:
+            return f"{data_list[0]}-{data_list[1]}-{data_list[2]}-{data_list[3]}"
+        return ''
+
+
 class DriverRegisterForm(forms.ModelForm):
-    username = forms.CharField(label="نام کاربری", max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    password = forms.CharField(label="رمز عبور", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-    full_name = forms.CharField(label="نام کامل", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    national_code = forms.CharField(label="کد ملی", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    car_model = forms.ModelChoiceField(queryset=CarModel.objects.all(), label="مدل خودرو", widget=forms.Select(attrs={'class': 'form-control'}))
-    license_plate = forms.CharField(label="شماره پلاک", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    car_code = forms.CharField(label="کد خودرو", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    username = forms.CharField(
+        label='نام کاربری',  # ✅ برچسب فارسی
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام کاربری'})
+    )
+    password = forms.CharField(
+        label='رمز عبور',  # ✅ برچسب فارسی
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'رمز عبور'})
+    )
+    first_name = forms.CharField(
+        label='نام',  # ✅ برچسب فارسی
+        max_length=100,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام'})
+    )
+    last_name = forms.CharField(
+        label='نام خانوادگی',  # ✅ برچسب فارسی
+        max_length=100,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام خانوادگی'})
+    )
+
+    license_plate = LicensePlateField(
+        label="پلاک خودرو",
+        required=True
+    )
 
     class Meta:
         model = Driver
-        fields = ['full_name', 'national_code', 'car_model', 'license_plate', 'car_code']
+        fields = ['username', 'first_name', 'last_name', 'password', 'national_code', 'car_model', 'car_code', 'license_plate']
+        widgets = {
+            'national_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'کد ملی'}),
+            'car_model': forms.Select(attrs={'class': 'form-control'}),
+            'car_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'کد خودرو'}),
+        }
+        labels = {
+            'national_code': 'کد ملی',
+            'car_model': 'مدل خودرو',
+            'car_code': 'کد خودرو',
+            'license_plate': 'پلاک خودرو',
+        }
 
-    def save(self, commit=True):
-        # ابتدا یوزر ساخته می‌شود
-        user = User.objects.create_user(
-            username=self.cleaned_data['username'],
-            password=self.cleaned_data['password']
-        )
-        # سپس راننده به یوزر نسبت داده می‌شود
-        driver = super().save(commit=False)
-        driver.user = user
-        if commit:
-            driver.save()
-        return driver
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        # اگر instance موجود است (در حالت ویرایش) و نام کاربری عوض نشده، مشکلی نیست
+        if self.instance.pk:
+            user_qs = User.objects.filter(username=username).exclude(pk=self.instance.user.pk)
+        else:
+            user_qs = User.objects.filter(username=username)
+
+        if user_qs.exists():
+            raise forms.ValidationError("این نام کاربری قبلاً استفاده شده است.")
+        return username
+
+
+from .models import CoopAttribute
+
+class CoopAttributeForm(forms.ModelForm):
+    class Meta:
+        model = CoopAttribute
+        fields = [ 'label', 'field_type', 'required', 'default_value']
+        labels = {
+       
+            'label': 'عنوان فیلد',
+            'field_type': 'نوع فیلد',
+            'required': 'الزامی است؟'
+        }
+        widgets = {
+           
+            'label': forms.TextInput(attrs={'class': 'form-control'}),
+            'field_type': forms.Select(attrs={'class': 'form-select'}),
+            'required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'default_value': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean_label(self):
+        label = self.cleaned_data.get('label')
+        qs = CoopAttribute.objects.filter(label=label)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError("این عنوان قبلاً استفاده شده است. لطفاً عنوان یکتایی وارد کنید.")
+        return label
+
+
+
+# class CoopAttributeForm(forms.ModelForm):
+#     class Meta:
+#         model = CoopAttribute
+#         fields = ['label', 'field_type', 'required', 'default_value']  # 👈 اضافه شد
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.fields['label'].label = "عنوان ویژگی"
+#         self.fields['field_type'].label = "نوع فیلد"
+#         self.fields['required'].label = "الزامی؟"
+#         self.fields['default_value'].label = "مقدار پیش‌فرض"
+

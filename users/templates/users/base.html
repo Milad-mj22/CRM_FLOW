@@ -10,14 +10,18 @@
   <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/all.min.js' %}">
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
+
+
   <link rel="icon" href="{% static 'icons/logo.png' %}" type="image/x-icon" />
 
   <style>
+
+
     body {
-      margin: 0;
-      font-family: 'Vazirmatn', sans-serif;
-      /* بکگراند شما اینجا تغییر نمی‌کند */
+        font-family: 'B Nazanin'; /* Ensure you have the B Nazanin font included in your base template */
+        direction: rtl;
     }
+
 
     .sidebar {
       position: fixed;
@@ -101,7 +105,7 @@
     <img src="{% static 'icons/logo.svg' %}" alt="لوگو KBC" />
     </a>
 
-    <a href="/tools"><i class="fas fa-tools me-2"></i> ابزارها</a>
+    <a href="/tools"><i class="fas fa-tools me-2"></i> مدیریت</a>
     <a href="/profile/{{ user.id }}/register_entry/"><i class="fas fa-list me-2"></i> ثبت تردد</a>
     <a href="/profile/{{ user.id }}/history_entry/"><i class="fas fa-list-alt me-2"></i> نمایش کارکرد</a>
     <a href="/profile"><i class="fas fa-user-circle me-2"></i> صفحه کاربر</a>
@@ -116,6 +120,7 @@
     <a href="/profile/create_material"><i class="fas fa-box me-2"></i> تعریف کالای جدید</a>
 
 <a href="/mines"><i class="bi bi-minecart-loaded me-2"></i> معادن</a>
+    <a href="/stone_flow/register/driver"><i class="bi bi-minecart-loaded me-2"></i> مدیریت راننده ها</a>
 
 
   </div>

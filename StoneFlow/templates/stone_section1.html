@@ -4,12 +4,76 @@
 {% block content2 %}
 
 {% load static %}
-
 <style>
-    /* استایل‌های جدول و دکمه‌ها (همان‌طور که قبلاً داشتید) */
-    /* ... (می‌توانید استایل‌های قبلی‌تان را قرار دهید) */
-</style>
+    .alert-custom {
+        direction: rtl;
+        text-align: right;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 15px;
+        font-weight: 500;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
 
+    .alert-custom i {
+        margin-left: 10px;
+        font-size: 18px;
+    }
+
+    .alert-success-custom {
+        background-color: #e6f9f0;
+        color: #027a4e;
+        border: 1px solid #6fe2b3;
+    }
+
+    .alert-error-custom {
+        background-color: #fdecea;
+        color: #a94442;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-custom .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: inherit;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+
+    select#mine_id {
+        direction: rtl;
+        text-align: right;
+    }
+
+
+  select.form-select {
+    font-family: 'Vazirmatn', 'IRANSans', Tahoma;
+    font-size: 16px;
+    padding: 8px 12px;
+  }
+
+  label.form-label {
+    font-weight: 500;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  .card {
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+  }
+
+
+
+</style>
 
 
 <script>
@@ -171,17 +235,7 @@
             // اگر فرم واقعی ارسال می‌شود (بدون AJAX)
             event.target.submit();
 
-            // یا اگر از AJAX استفاده می‌کنی، اینجا ارسال AJAX را بگذار و در صورت موفقیت ریدایرکت کن
 
-            // مثال فرضی:
-            /*
-            $.post('/your-url/', $('#your-form').serialize(), function(response){
-                if(response.success){
-                    alert('مقادیر با موفقیت ثبت شد');
-                    window.location.href = "{% url 'success_page' %}";
-                }
-            });
-            */
         } else {
             return false; // کاربر لغو کرد، ارسال نکن
         }
@@ -204,24 +258,6 @@
         input.value = value.toFixed(1);
     }
 
-
-
-    // document.addEventListener('DOMContentLoaded', function() {
-    // const form = document.querySelector('form');
-
-
-    // form.addEventListener('submit', function(event) {
-    //     event.preventDefault();
-
-    //     // Show success popup (can use Bootstrap modal or simple alert)
-    //     // alert('مقادیر مورد نظر با موفقیت اضافه گردید')
-
-    //     // Wait for a few seconds (e.g., 2 seconds) then redirect
-    //     setTimeout(function() {
-    //         window.location.href = "{% url 'success_page' %}";
-    //     }, 2000);  // 2-second delay
-    //     });
-    // });
 
 
 
@@ -301,10 +337,34 @@
 
 <body>
 
+
+
+
+{% if messages %}
+    {% for message in messages %}
+        {% if 'mine_success' in message.tags %}
+            <div class="alert-custom alert-success-custom">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ message }}</span>
+                <button type="button" class="close-btn" onclick="this.parentElement.style.display='none';">&times;</button>
+            </div>
+        {% elif 'create_coop_error' in message.tags %}
+            <div class="alert-custom alert-error-custom">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>{{ message }}</span>
+                <button type="button" class="close-btn" onclick="this.parentElement.style.display='none';">&times;</button>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+
+
 <div class="container-fluid p-0 m-0">  
     <div class="card page-title-card shadow-lg rounded-lg p-4 mb-4">
         <h1 class="page-title">حواله معدن</h1>
     </div>
+
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -318,6 +378,24 @@
                 <p><strong>سمت:</strong> {{ request.user.profile.job_position.name }}</p>
             </div>
         </div>
+
+<div class="card p-3 mb-3 text-end" style="direction: rtl;">
+  <div class="row g-3">
+    <div class="col-md-1 col-sm-12">
+      <label for="mine_id" class="form-label mb-2">بارگیری از معدن:</label>
+    </div>
+    <div class="col-md-9 col-sm-12">
+      <select name="mine_id" id="mine_id" class="form-select" required>
+        <option value="" disabled selected>انتخاب معدن...</option>
+        {% for mine in mines %}
+          <option value="{{ mine.id }}">{{ mine.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+</div>
+
+
 
 
     <!-- Search Bar with Close All Tabs Button -->
@@ -424,20 +502,68 @@
 
 
 
+<div class="row mb-3" style="direction: rtl;">
+    {% for attr in attributes %}
+        <div class="col-md-4 mb-3">
+            <label for="attr_{{ attr.id }}" class="form-label text-end d-block fw-bold">
+                {{ attr.label }}
+                {% if attr.required %}
+                    <span class="text-danger">*</span>
+                {% endif %}
+            </label>
+            {% if attr.field_type == 'int' or attr.field_type == 'float' %}
+                <input type="number" class="form-control text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
+                       step="any" value="{{ attr.default_value }}" {% if attr.required %}required{% endif %}>
+            {% else %}
+                <input type="text" class="form-control text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
+                       value="{{ attr.default_value }}" {% if attr.required %}required{% endif %}>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+
+
+
+<!-- 
+
         <div class="row mb-3">
         <div class="col-md-4">
             <label for="full_weight" class="form-label">وزن پر (کیلوگرم)</label>
-            <input type="number" class="form-control" name="full_weight" id="full_weight" required step="any">
+            <input type="number" class="form-control" name="full_weight" id="full_weight" required step="any"value="{{ full_weight }}">
         </div>
         <div class="col-md-4">
             <label for="empty_weight" class="form-label">وزن خالی (کیلوگرم)</label>
-            <input type="number" class="form-control" name="empty_weight" id="empty_weight" required step="any">
+            <input type="number" class="form-control" name="empty_weight" id="empty_weight" required step="any"value="{{ empty_weight|default:'0' }}">
         </div>
         <div class="col-md-4">
             <label for="net_weight" class="form-label">وزن خالص (کیلوگرم)</label>
-            <input type="number" class="form-control" name="net_weight" id="net_weight" required step="any">
+            <input type="number" class="form-control" name="net_weight" id="net_weight" required step="any" value="{{ net_weight|default:'0' }}">
         </div>
         </div>
+
+        <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="net_weight" class="form-label">قیمت کل (تومان)</label>
+            <input type="number" class="form-control" name="total_mine_price" id="total_mine_price" required step="any",value="0"value="{{ total_mine_price }}">
+        </div>
+        <div class="col-md-4">
+            <label for="full_weight" class="form-label">حق توزین (تومان)</label>
+            <input type="number" class="form-control" name="right_weigh" id="right_weigh" required step="any",value="0"value="{{ right_weigh|default:'0' }}">
+        </div>
+        <div class="col-md-4">
+            <label for="empty_weight" class="form-label">ارزش افزوده (تومان)</label>
+            <input type="number" class="form-control" name="added_value" id="added_value" required step="any",value="0"value="{{ added_value|default:'0' }}">
+        </div>
+        <div class="col-md-4">
+            <label for="net_weight" class="form-label">انعام (تومان)</label>
+            <input type="number" class="form-control" name="tip" id="tip" required step="any",value="0"value="{{ tip|default:'0' }}">
+        </div>
+
+        </div>
+
+         -->
+
 
 
 

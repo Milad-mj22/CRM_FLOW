@@ -30,6 +30,27 @@ class CoopStateHistory(models.Model):
     
 
 
+
+class CoopAttribute(models.Model):
+    TYPE_CHOICES = (
+        ('int', 'عدد صحیح'),
+        ('float', 'عدد اعشاری'),
+        ('str', 'متن'),
+    )
+    name = models.CharField(max_length=100)
+    label = models.CharField(max_length=200 ,  unique=True)  # Add unique=True here
+    field_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    required = models.BooleanField(default=False)
+    default_value = models.CharField(max_length=255, blank=True, null=True)
+
+
+    def __str__(self):
+        return self.label
+    
+
+
+
+
 class coops(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='raw_material_submissions')
     material = models.ForeignKey(raw_material, on_delete=models.CASCADE, related_name='submissions')
@@ -70,6 +91,14 @@ class coops(models.Model):
             )
 
 
+
+class CoopAttributeValue(models.Model):
+    coop = models.ForeignKey(coops, on_delete=models.CASCADE, related_name='attribute_values')
+    attribute = models.ForeignKey(CoopAttribute, on_delete=models.CASCADE)
+    value = models.CharField(max_length=500)
+
+    def __str__(self):
+        return f"{self.attribute.name}: {self.value}"
 
 
 # models.py

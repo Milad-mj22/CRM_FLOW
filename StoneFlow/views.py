@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from .models import CoopAttribute, CoopAttributeValue
 
 from StoneFlow.models import coops
+from mines.models import Mine
 from users.models import Profile, mother_material , raw_material
 # Create your views here.
 from django.contrib import messages
@@ -11,7 +13,7 @@ from django.core.files.base import ContentFile
 import base64
 
 
-from .models import coops, STATE_CHOICES
+from .models import Driver, coops, STATE_CHOICES
 # views.py
 from django.core.paginator import Paginator
 from django.http import JsonResponse
@@ -21,7 +23,7 @@ from django.template.loader import render_to_string
 def get_allowed_confirm_users(stepNumber:int):
 
     if stepNumber==1:
-        allowed_roles = ['manager', 'fishzan','Programmer']  # Adjust based on your logic
+        allowed_roles = ['manager', 'fishzan','Programmer','Driver']  # Adjust based on your logic
         return allowed_roles
 
     if stepNumber==2:
@@ -124,136 +126,109 @@ def coop_dashboard(request):
 
 
 
-
 @login_required
 def create_coope(request):
-    stepNumber=1
+    stepNumber = 1
 
     if request.method == 'POST':
         try:
-            
             data = dict(request.POST.dict())
-            data.pop('csrfmiddlewaretoken','Not found')
+            data.pop('csrfmiddlewaretoken', None)
 
             materials_data = []
-
             image = None
-
-            if 'image_data' in data.keys():
-                image_data = request.POST.get('image_data')
-                data.pop('image_data','Not found')
-
-            else:
-                return
-            
-
-            if 'full_weight' in data.keys() and 'empty_weight' in data.keys() and 'net_weight' in data.keys():
-
-                full_weight = request.POST.get('full_weight')
-                data.pop('full_weight','Not found')
-
-                empty_weight = request.POST.get('empty_weight')
-                data.pop('empty_weight','Not found')
-
-                net_weight = request.POST.get('net_weight')
-                data.pop('net_weight','Not found')
-
-
-                print('full_weight : ',full_weight,'  empty_weight : ',empty_weight,'  net_weight : ',net_weight)
-
-            else:
-                return
-
-            
+            image_data = request.POST.get('image_data')
             if image_data:
                 format, imgstr = image_data.split(';base64,')
                 ext = format.split('/')[-1]
                 image = ContentFile(base64.b64decode(imgstr), name='captured_image.' + ext)
+                data.pop('image_data', None)
+
+            mine_id = request.POST.get('mine_id')
+            if not mine_id:
+                messages.error(request, "لطفاً یک معدن انتخاب کنید.")
+                return redirect(request.path)
+
+            try:
+                selected_mine = Mine.objects.get(id=mine_id)
+            except Mine.DoesNotExist:
+                messages.error(request, "معدن انتخاب‌شده یافت نشد.")
+                return redirect(request.path)
+
+            # ذخیره وزن‌ها
+            full_weight = request.POST.get('full_weight')
+            empty_weight = request.POST.get('empty_weight')
+            net_weight = request.POST.get('net_weight')
+
+            data.pop('full_weight', None)
+            data.pop('empty_weight', None)
+            data.pop('net_weight', None)
+
+            print('وزن‌ها:', full_weight, empty_weight, net_weight)
+
+            # ذخیره ویژگی‌های دینامیک
+            coop_record = None  # فقط یک بار برای ویژگی‌ها ایجاد شود
+            attributes = CoopAttribute.objects.all()
 
 
+            # ثبت مواد خام
+            for field, value in data.items():
+                try:
+                    if value and float(value) > 0:
+                        raw_material_obj = raw_material.objects.get(name=field)
+                        coop_record = coops.objects.create(
+                            user=request.user,
+                            material=raw_material_obj,
+                            quantity=Decimal(value),
+                            image=image
+                        )
+                except:
+                    print('Error is Save Raw amterial', field)
 
-            # for name, quantity in zip(materials_names, materials_sent):
-            #     try:
-            #         quantity_value = float(quantity) if quantity else 0
-            #     except ValueError:
-            #         quantity_value = 0  # fallback in case of invalid input
-
-
-
-
-            #     materials_data.append({
-            #         'name': name,
-            #         'sent_quantity': quantity_value
-            #     })
-
-            #     raw_material_obj = raw_material.objects.filter(name=name).first()
-
-            #     coops.objects.create(
-            #         user=request.user,
-            #         material=raw_material_obj,
-            #         quantity=Decimal(quantity_value),
-            #         image = image
-            #     )
-
-            values ={}
-            for field,value in data.items():
-                # try:
-                    if value !='':
-                        if float(value)>0:
-                            values[field]=value
-
-
-                            raw_material_obj = raw_material.objects.get(name=field)
-                            coops.objects.create(
-                                user=request.user,
-                                material=raw_material_obj,
-                                quantity=Decimal(value),
-                                image = image
-                            )
-
-                # except:
-                #     print('error in add to coops')
-                #     messages.success(request,'بروز خطا در هنگام اضافه نمودن کوپ')
-                #     return redirect('/')  # Redirect to your desired page
-
-
-
-            # 👉 process/save data here
-            print(materials_data)  # For debugging
-
-            # Optionally redirect or add message
-            messages.success(request, "مقادیر با موفقیت ثبت شدند.")
-            return render(request=request,template_name='success_page.html',context={'content':'حواله جدید با موفقیت ثبت گردید'})
             
-        
-        except:
-            messages.error(request,'خطا در ذخیره اطلاعات')
-            return redirect("")  # هدایت به صفحه دیگر
+            if coop_record is not None:
 
+                for attr in attributes:
+                    field_name = f'attr_{attr.id}'
+                    value = request.POST.get(field_name, '').strip()
+
+                    if attr.required and not value:
+                        messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='create_coop_error')
+                        return redirect(request.path)
+
+                    if value:
+                        CoopAttributeValue.objects.create(
+                            coop=coop_record,
+                            attribute=attr,
+                            value=value
+                        )
+
+
+
+
+            messages.success(request, "مقادیر با موفقیت ثبت شدند.")
+            return render(request, 'success_page.html', {'content': 'حواله جدید با موفقیت ثبت گردید'})
+
+
+        except Exception as e:
+            print('Error:', e)
+            messages.error(request, 'خطا در ذخیره اطلاعات')
+            return redirect(request.path)
 
     else:
-
-
-        context = {
-            'order_id': 1,
-        }
-
-        can_submit , is_confirmed = get_submit_and_confirmed(user=request.user,stepNumber=stepNumber)
-
-        raw_materials_obj = raw_material.objects.all()
-
+        # GET
+        attributes = CoopAttribute.objects.all()
+        can_submit, is_confirmed = get_submit_and_confirmed(user=request.user, stepNumber=stepNumber)
         mother_materials = mother_material.objects.prefetch_related('mother_material').order_by('describe').all()
+        mines = Mine.objects.all()
 
-
-        return render(request, 'stone_section1.html',{
-                    #   'material_usages':raw_materials_obj,
-                    'mother_materials':mother_materials,
-
-                      'is_confirmed':is_confirmed,
-                      'can_submit':can_submit
-                      })
-
-
+        return render(request, 'stone_section1.html', {
+            'mother_materials': mother_materials,
+            'is_confirmed': is_confirmed,
+            'can_submit': can_submit,
+            'mines': mines,
+            'attributes': attributes,  # 👈 ارسال ویژگی‌ها به قالب
+        })
 
 
 
@@ -278,38 +253,164 @@ def coop_state_detail(request, coop_id, state):
 # views.py
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import DriverRegisterForm
+from .forms import CoopAttributeForm, DriverRegisterForm
 
 from users.models import jobs,User,Profile
+from django.db import transaction
+
+
+
+def driver_list_view(request):
+    drivers = Driver.objects.all()
+    return render(request, 'drivers/driver_list.html', {'drivers': drivers})
+
+
 
 def register_driver(request):
     if request.method == 'POST':
         form = DriverRegisterForm(request.POST)
         if form.is_valid():
-            # ساخت یوزر
-            user = User.objects.create_user(
-                username=form.cleaned_data['username'],
-                password=form.cleaned_data['password']
-            )
+            try:
+                # ایجاد تراکنش امن
+                with transaction.atomic():
+                    # ایجاد کاربر
+                    user = User.objects.create_user(
+                        username=form.cleaned_data['username'],
+                        password=form.cleaned_data['password'],
+                        first_name=form.cleaned_data['first_name'],
+                        last_name=form.cleaned_data['last_name'],
+                    )
 
-            # یافتن شغل "راننده"
-            driver_job = jobs.objects.get(name="راننده")  # یا هر فیلدی که داری مثل code='driver'
+                    # # دریافت موقعیت شغلی "راننده"
+                    # try:
+                    #     driver_job = jobs.objects.get(persian_name="راننده")
+                    # except jobs.DoesNotExist:
+                    #     messages.error(request, "شغل 'راننده' در سیستم تعریف نشده است. لطفاً با مدیر تماس بگیرید.")
+                    #     user.delete()  # حذف کاربر
+                    #     return render(request, 'drivers/register_driver.html', {'form': form})
 
-            # ساخت پروفایل با موقعیت شغلی راننده
-            Profile.objects.create(
-                user=user,
-                first_name=form.cleaned_data.get('full_name', '').split(' ')[0],
-                last_name=form.cleaned_data.get('full_name', '').split(' ')[-1],
-                job_position=driver_job
-            )
+                    # ساخت پروفایل
 
-            # ساخت شیء Driver
-            driver = form.save(commit=False)
-            driver.user = user
-            driver.save()
 
-            messages.success(request, "راننده با موفقیت ثبت شد.")
-            return redirect('login')
+                    # 1. گرفتن پروفایل مربوط به آن کاربر:
+                    profile = get_object_or_404(Profile, user=user)
+
+                    # 2. مقدار جدید برای job_position (مثلاً راننده):
+                    driver_job = get_object_or_404(jobs, persian_name="راننده")
+
+                    # 3. آپدیت مقدار
+                    profile.job_position = driver_job
+                    profile.first_name = form.cleaned_data['first_name']
+                    profile.last_name = form.cleaned_data['last_name']
+
+                    # 4. ذخیره تغییرات
+                    profile.save()
+
+
+
+
+                    # ساخت شیء راننده
+                    driver = form.save(commit=False)
+                    driver.user = user
+                    driver.save()
+
+                    messages.success(request, "ثبت‌نام راننده با موفقیت انجام شد.")
+                    return redirect('login')
+
+            except Exception as e:
+                # در صورت خطا در هر مرحله، کاربر و پروفایل حذف شود
+                if 'user' in locals():
+                    user.delete()
+                messages.error(request, f"خطا در ثبت‌نام: {str(e)}")
+                return render(request, 'drivers/register_driver.html', {'form': form})
+
     else:
         form = DriverRegisterForm()
+    
     return render(request, 'drivers/register_driver.html', {'form': form})
+
+
+
+from .forms import DriverRegisterForm
+from django.contrib import messages
+
+def edit_driver(request, driver_id):
+    driver = get_object_or_404(Driver, pk=driver_id)
+    if request.method == 'POST':
+        form = DriverRegisterForm(request.POST, instance=driver)
+        if form.is_valid():
+            form_instance = form.save(commit=False)
+            # به‌روزرسانی اطلاعات کاربر
+            user = driver.user
+            user.username = form.cleaned_data['username']
+            user.first_name = form.cleaned_data['first_name']
+            user.last_name = form.cleaned_data['last_name']
+            user.save()
+
+            form_instance.save()
+            return redirect('driver_list')
+    else:
+        initial = {
+            'username': driver.user.username,
+            'first_name': driver.user.first_name,
+            'last_name': driver.user.last_name,
+        }
+        form = DriverRegisterForm(instance=driver, initial=initial)
+
+    return render(request, 'drivers/edit_driver.html', {'form': form})
+
+
+
+def delete_driver_view(request, driver_id):
+    driver = get_object_or_404(Driver, id=driver_id)
+
+    if request.method == 'POST':
+        user = driver.user
+        driver.delete()
+        user.delete()  # حذف یوزر مرتبط
+        messages.success(request, "راننده با موفقیت حذف شد.")
+        return redirect('driver_list')
+
+    return render(request, 'drivers/delete_confirm.html', {'driver': driver})
+
+
+
+
+
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+
+@login_required
+def manage_coop_attributes(request):
+    form = CoopAttributeForm()
+    attributes = CoopAttribute.objects.all()
+
+    if request.method == 'POST':
+        if 'edit_id' in request.POST:
+            attr = get_object_or_404(CoopAttribute, id=request.POST['edit_id'])
+            form = CoopAttributeForm(request.POST, instance=attr)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'ویژگی با موفقیت ویرایش شد.', extra_tags='create_coop_feature_success')
+                return redirect('manage_coop_attributes')
+        elif 'delete_id' in request.POST:
+            attr = get_object_or_404(CoopAttribute, id=request.POST['delete_id'])
+            attr.delete()
+            messages.success(request, 'ویژگی حذف شد.', extra_tags='create_coop_feature_success')
+            return redirect('manage_coop_attributes')
+        else:
+            form = CoopAttributeForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'ویژگی جدید اضافه شد.', extra_tags='create_coop_feature_success')
+                return redirect('manage_coop_attributes')
+            else:
+                # Print errors to console (terminal) for debugging
+                print(form.errors)
+                messages.error(request, ' نام ویژگی تکراری است یا فرم کامل پرنشده است.', extra_tags='create_coop_feature_error')
+
+    return render(request, 'manage_attributes.html', {
+        'form': form,
+        'attributes': attributes
+    })
