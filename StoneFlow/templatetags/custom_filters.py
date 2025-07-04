@@ -1,6 +1,8 @@
 from django import template
 
 register = template.Library()
+
+
 @register.filter
 def split_license(plate):
     if not plate:
@@ -18,3 +20,27 @@ def split_license(plate):
         pass
 
     return ['--', '--', '---', '--']
+
+
+
+from django import template
+
+register = template.Library()
+
+@register.filter
+def split(value, delimiter=','):
+    if not value:
+        return []
+    # اگر بخوای فقط یک جداکننده باشه (مثلاً کامای فارسی)
+    if delimiter == ',':
+        # جدا کردن هم با کامای انگلیسی و هم فارسی
+        import re
+        return [item.strip() for item in re.split(r'[،,]', value)]
+    else:
+        return [item.strip() for item in value.split(delimiter)]
+
+
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key, '')

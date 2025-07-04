@@ -36,12 +36,25 @@ class CoopAttribute(models.Model):
         ('int', 'عدد صحیح'),
         ('float', 'عدد اعشاری'),
         ('str', 'متن'),
+        ('select', 'منوی کشویی'),  # 👈 اضافه شد
     )
+
+    STEP_CHOICES = (
+        (1, 'مرحله اول'),
+        (2, 'مرحله دوم'),
+        (3, 'مرحله سوم'),
+        # اگر مراحل بیشتری داری اضافه کن
+    )
+
+
+
     name = models.CharField(max_length=100)
     label = models.CharField(max_length=200 ,  unique=True)  # Add unique=True here
     field_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
     required = models.BooleanField(default=False)
     default_value = models.CharField(max_length=255, blank=True, null=True)
+    step = models.PositiveSmallIntegerField(choices=STEP_CHOICES, default=1, verbose_name="مرحله نمایش")
+    select_options = models.TextField(blank=True, null=True, help_text="مقادیر منو را با کاما جدا کنید (مثلاً: کوچک,متوسط,بزرگ)")
 
 
     def __str__(self):
@@ -121,3 +134,39 @@ class Driver(models.Model):
 
     def __str__(self):
         return self.full_name
+
+
+
+
+
+
+
+
+
+
+class Step(models.Model):
+    order = models.PositiveIntegerField()
+    title = models.CharField(max_length=200)
+    url_name = models.CharField(max_length=100)
+    # ...
+
+    def __str__(self):
+        return f"مرحله {self.order}: {self.title}"
+
+    class Meta:
+        ordering = ['order']
+
+class StepAccess(models.Model):
+    ACCESS_LEVEL_CHOICES = (
+        ('view', 'نمایش فقط'),
+        ('submit', 'نمایش و ارسال'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    step = models.ForeignKey(Step, on_delete=models.CASCADE)
+    access_level = models.CharField(max_length=10, choices=ACCESS_LEVEL_CHOICES)
+
+    class Meta:
+        unique_together = ('user', 'step')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.step.title} ({self.get_access_level_display()})"

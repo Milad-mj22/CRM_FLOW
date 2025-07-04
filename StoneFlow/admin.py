@@ -3,7 +3,7 @@ from django.contrib import admin
 # Register your models here.
 # Register your models here.
 
-from .models import CoopAttribute, CoopStateHistory, coops , CarModel , CoopAttributeValue
+from .models import CoopAttribute, CoopStateHistory, coops , CarModel , CoopAttributeValue,Step,StepAccess
 
 
 
@@ -20,12 +20,14 @@ class CoopAdmin(admin.ModelAdmin):
 admin.site.register(coops, CoopAdmin)
 admin.site.register(CoopStateHistory)
 admin.site.register(CarModel)
+admin.site.register(Step)
+admin.site.register(StepAccess)
 
 
 
 @admin.register(CoopAttribute)
 class CoopAttributeAdmin(admin.ModelAdmin):
-    list_display = ['label', 'field_type', 'required']
+    list_display = ['label', 'field_type', 'required', 'default_value', 'step']
 
 
 

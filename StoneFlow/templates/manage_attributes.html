@@ -4,6 +4,30 @@
 
 {% block content %}
 
+
+
+<script>
+  function toggleSelectOptions() {
+    var fieldType = document.getElementById("id_field_type");
+    var selectOptionsDiv = document.getElementById("select-options-field");
+
+    if (fieldType && fieldType.value === "select") {
+      selectOptionsDiv.style.display = "block";
+    } else {
+      selectOptionsDiv.style.display = "none";
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    toggleSelectOptions();  // بار اول اجرا شود
+    var fieldTypeSelect = document.getElementById("id_field_type");
+    if (fieldTypeSelect) {
+      fieldTypeSelect.addEventListener("change", toggleSelectOptions);
+    }
+  });
+</script>
+
+
 <style>
  .alert-custom {
         direction: rtl;
@@ -134,6 +158,33 @@
         </div>
       </div>
 
+
+
+      <div class="col-lg-3 col-md-6" id="select-options-field" style="display: none;">
+        <div class="card p-3">
+          <label for="{{ form.select_options.id_for_label }}" class="form-label">گزینه‌های منوی کشویی</label>
+          {{ form.select_options|add_class:"form-control text-end" }}
+          <div class="form-text text-danger small">مقادیر را با کاما جدا کنید (مثلاً: کوچک,متوسط,بزرگ)</div>
+        </div>
+      </div>
+
+
+
+
+
+
+
+      <!-- مرحله نمایش -->
+      <div class="col-lg-3 col-md-6">
+        <div class="card p-3">
+          <label for="{{ form.step.id_for_label }}" class="form-label">مرحله نمایش</label>
+          {{ form.step|add_class:"form-select text-end" }}
+        </div>
+      </div>
+
+
+
+
       <!-- مقدار پیش‌فرض -->
       <div class="col-lg-3 col-md-6">
         <div class="card p-3">
@@ -156,6 +207,9 @@
       </div>
     </div>
 
+
+
+
     <div class="text-end mt-4">
       <button type="submit" class="btn btn-success px-4">
         <i class="fas fa-plus ms-1"></i> ثبت ویژگی
@@ -174,6 +228,7 @@
                     <th>عنوان</th>
                     <th>نوع</th>
                     <th>الزامی</th>
+                    <th>مرحله نمایش</th>  <!-- 👈 اضافه شد -->
                     <th>عملیات</th>
                 </tr>
             </thead>
@@ -183,11 +238,12 @@
                     <td>{{ attr.label }}</td>
                     <td>{{ attr.get_field_type_display }}</td>
                     <td>{{ attr.required|yesno:"بله,خیر" }}</td>
+                     <td>{{ attr.get_step_display|default:attr.step }}</td>  <!-- 👈 اگر choices تعریف شده -->
                     <td>
                         <form method="post" class="d-inline-block">
                             {% csrf_token %}
                             <input type="hidden" name="edit_id" value="{{ attr.id }}">
-                            <button type="submit" class="btn btn-sm btn-warning">ویرایش</button>
+                            <!-- <button type="submit" class="btn btn-sm btn-warning">ویرایش</button> -->
                         </form>
                         <form method="post" class="d-inline-block" onsubmit="return confirm('آیا از حذف مطمئن هستید؟');">
                             {% csrf_token %}
@@ -204,3 +260,5 @@
     </div>
 </div>
 {% endblock %}
+
+

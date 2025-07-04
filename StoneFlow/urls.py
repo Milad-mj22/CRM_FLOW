@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, delete_driver_view, driver_list_view, edit_driver, manage_coop_attributes, register_driver
+from .views import create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, delete_driver_view, driver_list_view, dynamic_step_view, edit_driver, manage_access, manage_coop_attributes, register_driver
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -9,6 +9,7 @@ urlpatterns = [
 
 
     path('create_coope/', create_coope, name='show_flow'),
+    # path('section2/<int:order_id>/', views.section2_view, name='section2'),
 
     path('coops/', coops_by_state, name='coop_list'),
     path('coops/<int:coop_id>/', coop_detail, name='coop_detail'),
@@ -22,6 +23,11 @@ urlpatterns = [
     path('drivers/delete/<int:driver_id>/', delete_driver_view, name='delete_driver'),
     
     path('admin/coop-attributes/', manage_coop_attributes, name='manage_coop_attributes'),
+    path('admin/manage_access/', manage_access, name='manage_access'),
+
+    path('<str:url_name>/<int:order_id>/', dynamic_step_view, name='dynamic_step'),
+
+    
     
     # path('orders/show_flow/<int:order_id>', show_flow, name='show_flow'),
 

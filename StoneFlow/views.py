@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect
 from decimal import Decimal
 from django.core.files.base import ContentFile
 import base64
+from django.db.models import Q
 
 
 from .models import Driver, coops, STATE_CHOICES
@@ -217,10 +218,14 @@ def create_coope(request):
 
     else:
         # GET
-        attributes = CoopAttribute.objects.all()
+        attributes = CoopAttribute.objects.filter(step=stepNumber)
         can_submit, is_confirmed = get_submit_and_confirmed(user=request.user, stepNumber=stepNumber)
         mother_materials = mother_material.objects.prefetch_related('mother_material').order_by('describe').all()
         mines = Mine.objects.all()
+
+
+        steps = Step.objects.order_by('order')  # مرتب‌سازی مراحل
+
 
         return render(request, 'stone_section1.html', {
             'mother_materials': mother_materials,
@@ -228,6 +233,7 @@ def create_coope(request):
             'can_submit': can_submit,
             'mines': mines,
             'attributes': attributes,  # 👈 ارسال ویژگی‌ها به قالب
+            'steps': steps,
         })
 
 
@@ -246,6 +252,29 @@ def coop_state_detail(request, coop_id, state):
     #     'state': state,
     #     'history': history,
     # })
+
+
+
+
+
+
+def dynamic_step_view(request, url_name, order_id=None):
+    try:
+        step = Step.objects.get(url_name=url_name)
+        # اینجا می‌تونی بر اساس نوع step اقدام خاصی انجام بدی
+        return render(request, 'step_placeholder.html', {
+            'step': step,
+            'order_id': order_id,
+        })
+    except Step.DoesNotExist:
+        return render(request, 'step_not_found.html', {
+            'url_name': url_name
+        })
+
+
+
+
+
 
 
 
@@ -414,3 +443,64 @@ def manage_coop_attributes(request):
         'form': form,
         'attributes': attributes
     })
+
+
+
+
+
+from django.contrib.auth.models import User
+from django.shortcuts import render, redirect
+from .models import Step, StepAccess
+
+def manage_access(request):
+    # users = User.objects.all()
+    # steps = Step.objects.all()
+
+    query = request.GET.get('q', '')
+    if query:
+        users = User.objects.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(username__icontains=query)
+        )
+    else:
+        users = User.objects.all()
+
+    steps = Step.objects.all()
+
+
+
+    if request.method == 'POST':
+        # Receive data from form: 
+        # expect keys like access_USERID_STEPID = 'view' or 'submit' or ''(no access)
+        for user in users:
+            for step in steps:
+                key = f'access_{user.id}_{step.id}'
+                level = request.POST.get(key, '')
+                # Update or delete StepAccess accordingly
+                if level in ['view', 'submit']:
+                    obj, created = StepAccess.objects.update_or_create(
+                        user=user, step=step,
+                        defaults={'access_level': level}
+                    )
+                else:
+                    StepAccess.objects.filter(user=user, step=step).delete()
+        return redirect('manage_access')  # redirect to refresh page
+
+    # Prepare current access matrix
+    access_matrix = {}
+    for user in users:
+        access_matrix[user.id] = {}
+        for step in steps:
+            try:
+                sa = StepAccess.objects.get(user=user, step=step)
+                access_matrix[user.id][step.id] = sa.access_level
+            except StepAccess.DoesNotExist:
+                access_matrix[user.id][step.id] = ''
+
+    context = {
+        'users': users,
+        'steps': steps,
+        'access_matrix': access_matrix,
+    }
+    return render(request, 'manage_access.html', context)

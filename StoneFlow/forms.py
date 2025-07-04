@@ -114,32 +114,71 @@ class DriverRegisterForm(forms.ModelForm):
 
 from .models import CoopAttribute
 
+# class CoopAttributeForm(forms.ModelForm):
+#     class Meta:
+#         model = CoopAttribute
+#         fields = ['label', 'field_type', 'required', 'default_value', 'step']
+#         labels = {
+#             'label': 'عنوان فیلد',
+#             'field_type': 'نوع فیلد',
+#             'step': 'مرحله نمایش',
+#             'required': 'الزامی است؟',
+#             'default_value': 'مقدار پیش‌فرض',
+#         }
+#         widgets = {
+#             'label': forms.TextInput(attrs={'class': 'form-control'}),
+#             'field_type': forms.Select(attrs={'class': 'form-select'}),
+#             'step': forms.Select(attrs={'class': 'form-select'}),  # 👈 همین فیلد از STEP_CHOICES می‌خونه
+#             'required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+#             'default_value': forms.TextInput(attrs={'class': 'form-control'}),
+#         }
+
+#     def clean_label(self):
+#         label = self.cleaned_data.get('label')
+#         qs = CoopAttribute.objects.filter(label=label)
+#         if self.instance.pk:
+#             qs = qs.exclude(pk=self.instance.pk)
+#         if qs.exists():
+#             raise forms.ValidationError("این عنوان قبلاً استفاده شده است. لطفاً عنوان یکتایی وارد کنید.")
+#         return label
+
+
+
+
+
+
+
+
+
+
 class CoopAttributeForm(forms.ModelForm):
     class Meta:
         model = CoopAttribute
-        fields = [ 'label', 'field_type', 'required', 'default_value']
+        fields = ['label', 'field_type', 'required', 'default_value', 'step', 'select_options']
         labels = {
-       
             'label': 'عنوان فیلد',
             'field_type': 'نوع فیلد',
-            'required': 'الزامی است؟'
+            'required': 'الزامی است؟',
+            'default_value': 'مقدار پیش‌فرض',
+            'step': 'مرحله نمایش',
+            'select_options': 'گزینه‌های منوی کشویی',
         }
         widgets = {
-           
             'label': forms.TextInput(attrs={'class': 'form-control'}),
-            'field_type': forms.Select(attrs={'class': 'form-select'}),
+            'field_type': forms.Select(attrs={'class': 'form-select', 'id': 'id_field_type'}),
             'required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'default_value': forms.TextInput(attrs={'class': 'form-control'}),
+            'step': forms.Select(attrs={'class': 'form-select'}),  # 👈 همین فیلد از STEP_CHOICES می‌خونه
+            'select_options': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'مثلاً: کوچک,متوسط,بزرگ'}),
         }
 
-    def clean_label(self):
-        label = self.cleaned_data.get('label')
-        qs = CoopAttribute.objects.filter(label=label)
-        if self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
-        if qs.exists():
-            raise forms.ValidationError("این عنوان قبلاً استفاده شده است. لطفاً عنوان یکتایی وارد کنید.")
-        return label
+    def clean(self):
+        cleaned_data = super().clean()
+        field_type = cleaned_data.get('field_type')
+        select_options = cleaned_data.get('select_options')
+
+        if field_type == 'select' and not select_options:
+            self.add_error('select_options', 'برای منوی کشویی باید گزینه‌ها را وارد کنید.')
 
 
 

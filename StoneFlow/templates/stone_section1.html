@@ -1,4 +1,6 @@
 {% extends "stone_flow.html" %}
+{% load custom_filters %}
+
 
 {% block title %} Home Page {% endblock title %}
 {% block content2 %}
@@ -511,7 +513,19 @@
                     <span class="text-danger">*</span>
                 {% endif %}
             </label>
-            {% if attr.field_type == 'int' or attr.field_type == 'float' %}
+
+            {% if attr.field_type == 'select' %}
+                <select class="form-select text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
+                        {% if attr.required %}required{% endif %}>
+                    <option value="" disabled selected>انتخاب کنید...</option>
+                    {% for option in attr.select_options|default_if_none:''|cut:" "|split:"," %}
+                        <option value="{{ option }}" {% if attr.default_value == option %}selected{% endif %}>
+                            {{ option }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+            {% elif attr.field_type == 'int' or attr.field_type == 'float' %}
                 <input type="number" class="form-control text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
                        step="any" value="{{ attr.default_value }}" {% if attr.required %}required{% endif %}>
             {% else %}
@@ -521,8 +535,6 @@
         </div>
     {% endfor %}
 </div>
-
-
 
 
 <!-- 
