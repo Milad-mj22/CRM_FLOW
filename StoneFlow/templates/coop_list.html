@@ -1,5 +1,4 @@
 {% extends "users/base.html" %}
-
 {% load static %}
 {% block content %}
 <!-- Bootstrap & Icons CDN -->
@@ -69,14 +68,16 @@
 
 <div class="container my-4">
     <div class="toolbar text-center">
-        <h2 class="mb-3">وضعیت‌های مختلف کوپ‌ها</h2>
+        <h2 class="mb-3">مراحل ثبت و پیگیری کوپ‌ها</h2>
         <div class="d-flex flex-wrap justify-content-center">
+
             <a href="{% url 'coop_list' %}" class="btn btn-light btn-sm {% if not selected_state %}active{% endif %}">
                 <i class="bi bi-list-ul"></i> همه
             </a>
-            {% for code, name in states %}
-                <a href="?state={{ code }}" class="btn btn-outline-light btn-sm {% if selected_state == code %}active bg-white text-dark{% endif %}">
-                    <i class="bi bi-tag"></i> {{ name }}
+
+            {% for step in steps %}
+                <a href="?state={{ step.id }}" class="btn btn-outline-light btn-sm {% if selected_state == step.id|stringformat:"s" %}active bg-white text-dark{% endif %}">
+                    <i class="bi bi-tag"></i> {{ step.title }}
                 </a>
             {% endfor %}
         </div>
@@ -86,9 +87,9 @@
         <div class="row g-2 justify-content-center align-items-center">
             <div class="col-auto">
                 <select name="state" class="form-select">
-                    <option value="">همه وضعیت‌ها</option>
-                    {% for code, name in states %}
-                        <option value="{{ code }}" {% if selected_state == code %}selected{% endif %}>{{ name }}</option>
+                    <option value="">همه مراحل</option>
+                    {% for step in steps %}
+                        <option value="{{ step.id }}" {% if selected_state == step.id|stringformat:"s" %}selected{% endif %}>{{ step.title }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -152,5 +153,4 @@
         });
     }
 </script>
-
 {% endblock %}

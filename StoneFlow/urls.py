@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, delete_driver_view, driver_list_view, dynamic_step_view, edit_driver, manage_access, manage_coop_attributes, register_driver
+from .views import create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, delete_driver_view, delete_step, driver_list_view, dynamic_step_view, edit_driver, manage_access, manage_coop_attributes, manage_step, register_driver, steps_list
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -26,6 +26,19 @@ urlpatterns = [
     path('admin/manage_access/', manage_access, name='manage_access'),
 
     path('<str:url_name>/<int:order_id>/', dynamic_step_view, name='dynamic_step'),
+    # path('<str:url_name>/<int:order_id>/', dynamic_step_view, name='dynamic_step'),
+
+
+
+
+    # path('admin/steps/create/', manage_step, name='create_step'),
+    # path('admin/steps/edit/<int:step_id>/', manage_step, name='edit_step'),
+
+    path('admin/steps/', steps_list, name='steps_list'),
+    path('admin/steps/create/', manage_step, name='create_step'),
+    path('admin/steps/edit/<int:step_id>/', manage_step, name='edit_step'),
+    path('admin/steps/delete/<int:step_id>/', delete_step, name='delete_step'),
+
 
     
     

@@ -1,5 +1,9 @@
 from django import template
 
+from StoneFlow.models import Step
+
+
+
 register = template.Library()
 
 
@@ -44,3 +48,22 @@ def split(value, delimiter=','):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key, '')
+
+
+@register.filter
+def get_next_step(steps, current_order):
+    try:
+        if current_order =='':
+            current_order =1
+        current_order = int(current_order.order)
+        current_order+=1
+        # next_steps = steps.filter(order__gt=current_order).order_by('order')
+        next_steps = Step.objects.filter(order = current_order)
+        if next_steps.exists():
+            return next_steps.first()
+        return None
+        # return next_steps.first() if next_steps.exists() else None
+    except:
+        return None
+    
+

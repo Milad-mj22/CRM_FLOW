@@ -181,16 +181,20 @@ class CoopAttributeForm(forms.ModelForm):
             self.add_error('select_options', 'برای منوی کشویی باید گزینه‌ها را وارد کنید.')
 
 
+from django import forms
+from .models import Step
 
-# class CoopAttributeForm(forms.ModelForm):
-#     class Meta:
-#         model = CoopAttribute
-#         fields = ['label', 'field_type', 'required', 'default_value']  # 👈 اضافه شد
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.fields['label'].label = "عنوان ویژگی"
-#         self.fields['field_type'].label = "نوع فیلد"
-#         self.fields['required'].label = "الزامی؟"
-#         self.fields['default_value'].label = "مقدار پیش‌فرض"
-
+class StepForm(forms.ModelForm):
+    class Meta:
+        model = Step
+        fields = ['title', 'order', 'url_name']
+        labels = {
+            'title': 'عنوان مرحله',
+            'order': 'ترتیب نمایش',
+            'url_name': 'نام در URL (انگلیسی)'
+        }
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control'}),
+            'url_name': forms.TextInput(attrs={'class': 'form-control'}),
+        }

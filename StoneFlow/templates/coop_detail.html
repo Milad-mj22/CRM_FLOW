@@ -1,4 +1,5 @@
 {% extends "users/base.html" %}
+{% load custom_filters %}
 
 {% load static %}
 {% block content %}
@@ -113,30 +114,57 @@
         <h5 class="mb-3 text-center"><i class="bi bi-clock-history text-primary"></i> تاریخچه تغییر وضعیت‌ها</h5>
 
         {% if coop.state_history.all %}
-        <div class="timeline">
-            {% for history in coop.state_history.all %}
-            <a href="{% url 'coop_state_detail' coop.id history.new_state %}" class="text-decoration-none text-dark">
-                <div class="timeline-event">
-                    <div class="timeline-content">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap">
-                            <div>
-                                <div class="timeline-state">
-                                    <i class="bi bi-arrow-left-right timeline-icon"></i>
-                                    {{ history.get_previous_state_display }} ➜ {{ history.get_new_state_display }}
+            <div class="timeline">
+                {% for history in coop.state_history.all %}
+                <a href="{% url 'coop_state_detail' coop.id history.new_state.url_name %}" class="text-decoration-none text-dark">
+                    <div class="timeline-event">
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <div>
+                                    <div class="timeline-state">
+                                        <i class="bi bi-arrow-left-right timeline-icon"></i>
+                                        {{ history.new_state.title }} ➜ {{ history.previous_state.title|default:" نامشخص " }}
+                                    </div>
+                                    <small class="text-muted">توسط {{ history.changed_by.username }}</small>
                                 </div>
-                                <small class="text-muted">توسط {{ history.changed_by.username }}</small>
-                            </div>
-                            <div>
-                                <small class="text-muted">
-                                    <i class="bi bi-calendar-event"></i> {{ history.changed_at|date:"Y-m-d H:i" }}
-                                </small>
+                                <div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-event"></i> {{ history.changed_at|date:"Y-m-d H:i" }}
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
+                </a>
+                {% endfor %}
+            </div>
+
+
+
+            {% with last_step=coop.state_history.all.last.new_state %}
+                {% with next_step=steps|get_next_step:last_step %}
+                    {% if next_step %}
+                        {% with access=step_access|get_item:next_step.order %}
+                            {% if access == 'submit' %}
+                                <div class="text-center mt-4">
+                                    <a href="/stone_flow/{{ next_step.url_name }}/{{ coop.id }}/" class="btn btn-success btn-lg">
+                                        رفتن به مرحله بعد: {{ next_step.title }}
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="text-muted text-center mt-3">دسترسی مرحله بعد را ندارید</div>
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        <div class="text-muted text-center mt-3">مرحله بعدی وجود ندارد.</div>
+                    {% endif %}
+                {% endwith %}
+            {% endwith %}
+
+
+
+
+
         {% else %}
             <p class="text-muted text-center">هیچ تغییر وضعیتی ثبت نشده است.</p>
         {% endif %}

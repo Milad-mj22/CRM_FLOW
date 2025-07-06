@@ -102,10 +102,11 @@ body {
   <div class="step-header">مراحل پروسه تولید سنگ</div>
   <div class="step-btns">
     {% for step in steps %}
-      <a href="/stone_flow/{{ step.url_name }}/{{ order_id }}/">
+      <a href="/stone_flow/{{ step.url_name }}/{{ order_id|default:"-1" }}/">
         <button>مرحله {{ step.order }}: {{ step.title }}</button>
       </a>
     {% endfor %}
+
   </div>
 </div>
 

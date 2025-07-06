@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import CoopAttribute, CoopAttributeValue
-
+from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
 from users.models import Profile, mother_material , raw_material
@@ -66,6 +66,7 @@ def coops_by_state(request):
     page = int(request.GET.get('page', 1))
 
     coop_list = coops.objects.all().order_by('-id')
+    steps = Step.objects.order_by('order')  # مرتب‌سازی مراحل
     materials = raw_material.objects.all()
 
     if selected_state:
@@ -82,7 +83,7 @@ def coops_by_state(request):
 
     context = {
         'coops': page_obj,
-        'states': STATE_CHOICES,
+        'steps': steps,
         'selected_state': selected_state,
         'materials': materials,
         'selected_material_id': selected_material_id,
@@ -91,7 +92,12 @@ def coops_by_state(request):
 
 def coop_detail(request, coop_id):
     coop = get_object_or_404(coops, id=coop_id)
-    return render(request, 'coop_detail.html', {'coop': coop})
+
+    user_access_qs = StepAccess.objects.filter(user=request.user)
+    step_access = {access.step.id: access.access_level for access in user_access_qs}
+
+
+    return render(request, 'coop_detail.html', {'coop': coop,'step_access':step_access})
 
 
 
@@ -126,95 +132,96 @@ def coop_dashboard(request):
     })
 
 
-
+from django.db import transaction
 @login_required
+@transaction.atomic
 def create_coope(request):
     stepNumber = 1
 
     if request.method == 'POST':
-        try:
-            data = dict(request.POST.dict())
-            data.pop('csrfmiddlewaretoken', None)
+        coop_record = None  # در سطح بالا تعریف می‌کنیم که در except هم قابل دسترسی باشد
+    # try:
+        data = dict(request.POST.dict())
+        data.pop('csrfmiddlewaretoken', None)
 
-            materials_data = []
-            image = None
-            image_data = request.POST.get('image_data')
-            if image_data:
-                format, imgstr = image_data.split(';base64,')
-                ext = format.split('/')[-1]
-                image = ContentFile(base64.b64decode(imgstr), name='captured_image.' + ext)
-                data.pop('image_data', None)
+        image = None
+        image_data = request.POST.get('image_data')
+        if image_data:
+            format, imgstr = image_data.split(';base64,')
+            ext = format.split('/')[-1]
+            image = ContentFile(base64.b64decode(imgstr), name='captured_image.' + ext)
+            data.pop('image_data', None)
 
-            mine_id = request.POST.get('mine_id')
-            if not mine_id:
-                messages.error(request, "لطفاً یک معدن انتخاب کنید.")
-                return redirect(request.path)
+        mine_id = request.POST.get('mine_id')
+        if not mine_id:
+            messages.error(request, "لطفاً یک معدن انتخاب کنید.")
+            raise Exception("معدن انتخاب نشده")
 
+        selected_mine = Mine.objects.filter(id=mine_id).first()
+        if not selected_mine:
+            messages.error(request, "معدن انتخاب‌شده یافت نشد.")
+            raise Exception("معدن نامعتبر")
+
+        # ذخیره وزن‌ها
+        full_weight = request.POST.get('full_weight')
+        empty_weight = request.POST.get('empty_weight')
+        net_weight = request.POST.get('net_weight')
+
+        data.pop('full_weight', None)
+        data.pop('empty_weight', None)
+        data.pop('net_weight', None)
+        data.pop('mine_id', None)
+
+        step = Step.objects.filter(order = 1).first()
+
+        # ثبت مواد خام
+        for field, value in data.items():
             try:
-                selected_mine = Mine.objects.get(id=mine_id)
-            except Mine.DoesNotExist:
-                messages.error(request, "معدن انتخاب‌شده یافت نشد.")
-                return redirect(request.path)
+                if value and float(value) > 0:
+                    raw_material_obj = raw_material.objects.get(name=field)
+                    coop_record = coops.objects.create(
+                        user=request.user,
+                        material=raw_material_obj,
+                        quantity=Decimal(value),
+                        state = step,
+                        image=image
+                    )
+            except Exception as e:
+                # raise Exception(f"خطا در ثبت مواد اولیه: {field}")
+                print('Error is Save Raw amterial', field)
 
-            # ذخیره وزن‌ها
-            full_weight = request.POST.get('full_weight')
-            empty_weight = request.POST.get('empty_weight')
-            net_weight = request.POST.get('net_weight')
+        if coop_record is None:
+            raise Exception("هیچ کوپی ثبت نشد")
 
-            data.pop('full_weight', None)
-            data.pop('empty_weight', None)
-            data.pop('net_weight', None)
+        # ثبت ویژگی‌های دینامیک
+        attributes = CoopAttribute.objects.filter(step=stepNumber)
+        for attr in attributes:
+            field_name = f'attr_{attr.id}'
+            value = request.POST.get(field_name, '').strip()
 
-            print('وزن‌ها:', full_weight, empty_weight, net_weight)
+            if attr.required and not value:
+                messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='create_coop_error')
+                raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
 
-            # ذخیره ویژگی‌های دینامیک
-            coop_record = None  # فقط یک بار برای ویژگی‌ها ایجاد شود
-            attributes = CoopAttribute.objects.all()
+            if value:
+                CoopAttributeValue.objects.create(
+                    coop=coop_record,
+                    attribute=attr,
+                    value=value
+                )
 
+        messages.success(request, "مقادیر با موفقیت ثبت شدند.")
+        return render(request, 'success_page.html', {'content': 'حواله جدید با موفقیت ثبت گردید'})
 
-            # ثبت مواد خام
-            for field, value in data.items():
-                try:
-                    if value and float(value) > 0:
-                        raw_material_obj = raw_material.objects.get(name=field)
-                        coop_record = coops.objects.create(
-                            user=request.user,
-                            material=raw_material_obj,
-                            quantity=Decimal(value),
-                            image=image
-                        )
-                except:
-                    print('Error is Save Raw amterial', field)
+        # except Exception as e:
+        #     print('❌ خطا در ثبت اطلاعات:', e)
 
-            
-            if coop_record is not None:
+        #     # اگر کوپ ساخته شده، آن را حذف کن
+        #     if coop_record:
+        #         coop_record.delete()
 
-                for attr in attributes:
-                    field_name = f'attr_{attr.id}'
-                    value = request.POST.get(field_name, '').strip()
-
-                    if attr.required and not value:
-                        messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='create_coop_error')
-                        return redirect(request.path)
-
-                    if value:
-                        CoopAttributeValue.objects.create(
-                            coop=coop_record,
-                            attribute=attr,
-                            value=value
-                        )
-
-
-
-
-            messages.success(request, "مقادیر با موفقیت ثبت شدند.")
-            return render(request, 'success_page.html', {'content': 'حواله جدید با موفقیت ثبت گردید'})
-
-
-        except Exception as e:
-            print('Error:', e)
-            messages.error(request, 'خطا در ذخیره اطلاعات')
-            return redirect(request.path)
+        #     messages.error(request, 'خطا در ذخیره اطلاعات. تمام داده‌ها حذف شدند.')
+        #     return redirect(request.path)
 
     else:
         # GET
@@ -239,19 +246,63 @@ def create_coope(request):
 
 
 
+# def coop_state_detail(request, coop_id, state):
+
+#     if state==STATE_CHOICES[0][0]:
+#         ret = create_coope(request=request)
+#         return ret
+
+#     # coop = get_object_or_404(coops, id=coop_id)
+#     # history = coop.state_history.filter(new_state=state).last()
+#     # return render(request, 'coop/coop_state_detail.html', {
+#     #     'coop': coop,
+#     #     'state': state,
+#     #     'history': history,
+#     # })
+
+
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Step, coops, CoopStateHistory  # فرضی
+from django.http import Http404
+
 def coop_state_detail(request, coop_id, state):
+    try:
+        step = Step.objects.get(url_name=state)
+    except Step.DoesNotExist:
+        return render(request, 'step_not_found.html', {
+            'state': state,
+            'coop_id': coop_id
+        })
 
-    if state==STATE_CHOICES[0][0]:
-        ret = create_coope(request=request)
-        return ret
+    if step.url_name == 'create_coope':
+        return create_coope(request=request)
 
-    # coop = get_object_or_404(coops, id=coop_id)
-    # history = coop.state_history.filter(new_state=state).last()
-    # return render(request, 'coop/coop_state_detail.html', {
-    #     'coop': coop,
-    #     'state': state,
-    #     'history': history,
-    # })
+    coop = get_object_or_404(coops, id=coop_id)
+
+    # ویژگی‌های مربوط به این مرحله
+    attributes = CoopAttribute.objects.filter(step=step)
+
+    # مقادیر ذخیره‌شده مربوط به این کوپ و این ویژگی‌ها
+    attribute_values = {
+        av.attribute_id: av.value
+        for av in coop.attribute_values.filter(attribute__in=attributes)
+    }
+
+    history = coop.state_history.filter(new_state=state).last()
+
+    return render(request, 'coop_state_detail.html', {
+        'coop': coop,
+        'state': state,
+        'history': history,
+        'step': step,
+        'attributes': attributes,
+        'attribute_values': attribute_values
+    })
+
+
+
 
 
 
@@ -282,7 +333,7 @@ def dynamic_step_view(request, url_name, order_id=None):
 # views.py
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import CoopAttributeForm, DriverRegisterForm
+from .forms import CoopAttributeForm, DriverRegisterForm, StepForm
 
 from users.models import jobs,User,Profile
 from django.db import transaction
@@ -504,3 +555,40 @@ def manage_access(request):
         'access_matrix': access_matrix,
     }
     return render(request, 'manage_access.html', context)
+
+
+
+
+
+def steps_list(request):
+    steps = Step.objects.order_by('order')
+    return render(request, 'steps_list.html', {'steps': steps})
+
+
+def manage_step(request, step_id=None):
+    if step_id:
+        step = get_object_or_404(Step, id=step_id)
+    else:
+        step = None
+
+    form = StepForm(request.POST or None, instance=step)
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('steps_list')  # آدرس لیست مراحل
+
+    return render(request, 'manage_step.html', {
+        'form': form,
+        'is_edit': step is not None
+    })
+
+
+
+def delete_step(request, step_id):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("اجازه دسترسی ندارید.")
+
+    step = get_object_or_404(Step, id=step_id)
+    step.delete()
+    messages.success(request, "مرحله با موفقیت حذف شد.")
+    return redirect('steps_list')

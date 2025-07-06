@@ -18,16 +18,60 @@ STATE_CHOICES = [
 
 
 
+
+
+
+
+class Step(models.Model):
+    order = models.PositiveIntegerField()
+    title = models.CharField(max_length=200)
+    url_name = models.CharField(max_length=100)
+    # ...
+
+    def __str__(self):
+        return f"مرحله {self.order}: {self.title}"
+
+    class Meta:
+        ordering = ['order']
+
+class StepAccess(models.Model):
+    ACCESS_LEVEL_CHOICES = (
+        ('view', 'نمایش فقط'),
+        ('submit', 'نمایش و ارسال'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    step = models.ForeignKey(Step, on_delete=models.CASCADE)
+    access_level = models.CharField(max_length=10, choices=ACCESS_LEVEL_CHOICES)
+
+    class Meta:
+        unique_together = ('user', 'step')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.step.title} ({self.get_access_level_display()})"
+
+
+
+
 class CoopStateHistory(models.Model):
     coop = models.ForeignKey('coops', on_delete=models.CASCADE, related_name='state_history')
-    previous_state = models.CharField(max_length=30, choices=STATE_CHOICES)
-    new_state = models.CharField(max_length=30, choices=STATE_CHOICES)
+    previous_state =  models.ForeignKey(Step, on_delete=models.CASCADE,related_name='prev_history',blank=True,null=True)
+    new_state =  models.ForeignKey(Step, on_delete=models.CASCADE,related_name='new_history')
     changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     changed_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f"{self.coop.id} | {self.get_previous_state_display()} ➝ {self.get_new_state_display()} @ {self.changed_at}"
     
+
+
+
+    # def __str__(self):
+    #     return f"{self.coop.id}"
+    #     # | {self.previous_state.title} ➝ {self.new_state.title} @ {self.changed_at}"
+
+
+
+
 
 
 
@@ -48,12 +92,14 @@ class CoopAttribute(models.Model):
 
 
 
+
     name = models.CharField(max_length=100)
     label = models.CharField(max_length=200 ,  unique=True)  # Add unique=True here
     field_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
     required = models.BooleanField(default=False)
     default_value = models.CharField(max_length=255, blank=True, null=True)
-    step = models.PositiveSmallIntegerField(choices=STEP_CHOICES, default=1, verbose_name="مرحله نمایش")
+    step = models.ForeignKey(Step, on_delete=models.CASCADE, verbose_name="مرحله نمایش")
+    # step = models.PositiveSmallIntegerField(choices=STEP_CHOICES, default=1, verbose_name="مرحله نمایش")
     select_options = models.TextField(blank=True, null=True, help_text="مقادیر منو را با کاما جدا کنید (مثلاً: کوچک,متوسط,بزرگ)")
 
 
@@ -70,7 +116,9 @@ class coops(models.Model):
     
     quantity = models.FloatField()
     submitted_at  = models.DateTimeField(default=timezone.now, null=True, blank=True)
-    state = models.CharField(max_length=30, choices=STATE_CHOICES, default='transport')
+    # state = models.CharField(max_length=30, choices=STATE_CHOICES, default='transport')
+    state = models.ForeignKey(Step, on_delete=models.CASCADE, default=None, null=True, blank=True ,related_name='coops_step' )
+
 
     image = models.ImageField(upload_to='mining_remittance/', blank=True, null=True)  # Added field for image
 
@@ -83,7 +131,7 @@ class coops(models.Model):
 
     def set_changed_by(self, user):
         self._changed_by = user
-
+            
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         previous_state = None
@@ -94,15 +142,15 @@ class coops(models.Model):
 
         super().save(*args, **kwargs)  # اول ذخیره کن تا مطمئن باشیم pk داریم
 
-        # فقط وقتی کوپ جدید هست و state = transport یا state تغییر کرده، لاگ بساز
-        if (is_new and self.state == 'transport') or (not is_new and previous_state != self.state):
+
+        # فقط وقتی کوپ جدید هست یا وضعیت تغییر کرده
+        if (is_new and self.state) or (not is_new and previous_state != self.state):
             CoopStateHistory.objects.create(
                 coop=self,
-                previous_state=previous_state if previous_state else 'New',
+                previous_state=previous_state,
                 new_state=self.state,
                 changed_by=self._changed_by
             )
-
 
 
 class CoopAttributeValue(models.Model):
@@ -142,31 +190,3 @@ class Driver(models.Model):
 
 
 
-
-
-class Step(models.Model):
-    order = models.PositiveIntegerField()
-    title = models.CharField(max_length=200)
-    url_name = models.CharField(max_length=100)
-    # ...
-
-    def __str__(self):
-        return f"مرحله {self.order}: {self.title}"
-
-    class Meta:
-        ordering = ['order']
-
-class StepAccess(models.Model):
-    ACCESS_LEVEL_CHOICES = (
-        ('view', 'نمایش فقط'),
-        ('submit', 'نمایش و ارسال'),
-    )
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    step = models.ForeignKey(Step, on_delete=models.CASCADE)
-    access_level = models.CharField(max_length=10, choices=ACCESS_LEVEL_CHOICES)
-
-    class Meta:
-        unique_together = ('user', 'step')
-
-    def __str__(self):
-        return f"{self.user.username} - {self.step.title} ({self.get_access_level_display()})"
