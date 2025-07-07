@@ -6,7 +6,7 @@
 
 
 
-<script>
+<!-- <script>
   function toggleSelectOptions() {
     var fieldType = document.getElementById("id_field_type");
     var selectOptionsDiv = document.getElementById("select-options-field");
@@ -25,7 +25,32 @@
       fieldTypeSelect.addEventListener("change", toggleSelectOptions);
     }
   });
+</script> -->
+
+
+
+<script>
+  function toggleSelectOptions() {
+    var fieldType = document.getElementById("id_field_type");
+    var selectOptionsDiv = document.getElementById("select-options-field");
+
+    if (fieldType && (fieldType.value === "select" || fieldType.value === "multi_select")) {
+      selectOptionsDiv.style.display = "block";
+    } else {
+      selectOptionsDiv.style.display = "none";
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    toggleSelectOptions();  // بار اول اجرا شود
+    var fieldTypeSelect = document.getElementById("id_field_type");
+    if (fieldTypeSelect) {
+      fieldTypeSelect.addEventListener("change", toggleSelectOptions);
+    }
+  });
 </script>
+
+
 
 
 <style>
@@ -147,6 +172,18 @@
         <div class="card p-3">
           <label for="{{ form.label.id_for_label }}" class="form-label">عنوان ویژگی</label>
           {{ form.label|add_class:"form-control text-end" }}
+
+          {% if form.field_type.value == "multi_select" %}
+              <div class="form-text text-info small">
+                  چند گزینه را با کاما جدا کنید (مثلاً: قرمز,آبی,سبز)
+              </div>
+          {% elif form.field_type.value == "image" %}
+              <div class="form-text text-info small">
+                  این فیلد برای بارگذاری تصویر کاربر است.
+              </div>
+          {% endif %}
+
+
         </div>
       </div>
 

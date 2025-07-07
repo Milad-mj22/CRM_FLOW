@@ -172,6 +172,9 @@ class CoopAttributeForm(forms.ModelForm):
             'select_options': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'مثلاً: کوچک,متوسط,بزرگ'}),
         }
 
+
+
+
     def clean(self):
         cleaned_data = super().clean()
         field_type = cleaned_data.get('field_type')
@@ -179,6 +182,8 @@ class CoopAttributeForm(forms.ModelForm):
 
         if field_type == 'select' and not select_options:
             self.add_error('select_options', 'برای منوی کشویی باید گزینه‌ها را وارد کنید.')
+
+
 
 
 from django import forms

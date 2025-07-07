@@ -60,7 +60,7 @@ class CoopStateHistory(models.Model):
     changed_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.coop.id} | {self.get_previous_state_display()} ➝ {self.get_new_state_display()} @ {self.changed_at}"
+        return f"{self.coop.id} | {self.previous_state} ➝ {self.new_state} @ {self.changed_at}"
     
 
 
@@ -81,21 +81,21 @@ class CoopAttribute(models.Model):
         ('float', 'عدد اعشاری'),
         ('str', 'متن'),
         ('select', 'منوی کشویی'),  # 👈 اضافه شد
+        ('bool', 'چک‌باکس'),               # ✅ NEW
+        ('image', 'تصویر'),               # ✅ NEW
+        ('material', 'ماده اولیه'),       # ✅ NEW
+        ('warehouse', 'انبار'),           # ✅ NEW
+        ('multi_select', 'چک‌باکس چندتایی'),  # ✅ new
     )
 
-    STEP_CHOICES = (
-        (1, 'مرحله اول'),
-        (2, 'مرحله دوم'),
-        (3, 'مرحله سوم'),
-        # اگر مراحل بیشتری داری اضافه کن
-    )
+
 
 
 
 
     name = models.CharField(max_length=100)
     label = models.CharField(max_length=200 ,  unique=True)  # Add unique=True here
-    field_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    field_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     required = models.BooleanField(default=False)
     default_value = models.CharField(max_length=255, blank=True, null=True)
     step = models.ForeignKey(Step, on_delete=models.CASCADE, verbose_name="مرحله نمایش")
@@ -127,7 +127,7 @@ class coops(models.Model):
     _changed_by = None
 
     def __str__(self):
-        return f"{self.user.username} - {self.material.name} - {self.get_state_display()}"
+        return f"{self.user.username} - {self.material.name} - {self.state.title}"
 
     def set_changed_by(self, user):
         self._changed_by = user

@@ -4,7 +4,7 @@ from .models import CoopAttribute, CoopAttributeValue
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
-from users.models import Profile, mother_material , raw_material
+from users.models import Profile, Warehouse, mother_material , raw_material
 # Create your views here.
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
@@ -28,7 +28,7 @@ def get_allowed_confirm_users(stepNumber:int):
         return allowed_roles
 
     if stepNumber==2:
-        allowed_roles = ['manager', 'fishzan']  # Adjust based on your logic
+        allowed_roles = ['manager', 'fishzan','Programmer']  # Adjust based on your logic
         return allowed_roles
 
     if stepNumber==3:
@@ -39,21 +39,21 @@ def get_allowed_confirm_users(stepNumber:int):
         allowed_roles = ['manager', 'fishzan']  # Adjust based on your logic
         return allowed_roles  
 
-def convertName2Step(self,name):
-    if name =='create_coope':
-        return 1
+
 
 
 def get_submit_and_confirmed(user,stepNumber):
-        user_profile = Profile.objects.get(user=user)
-        user_role = user_profile.job_position.name
-        allowed_roles = get_allowed_confirm_users(stepNumber=1)
-        # Check if the user has access to submit this step
-        can_submit = user_role in allowed_roles
-        # is_confirmed = check_order_confirmed(order=ret,stepNumber=1)
-        is_confirmed = False
-        return can_submit , is_confirmed
-
+        try:
+            user_profile = Profile.objects.get(user=user)
+            user_role = user_profile.job_position.name
+            allowed_roles = get_allowed_confirm_users(stepNumber=stepNumber)
+            # Check if the user has access to submit this step
+            can_submit = user_role in allowed_roles
+            # is_confirmed = check_order_confirmed(order=ret,stepNumber=1)
+            is_confirmed = False
+            return can_submit , is_confirmed
+        except:
+            return False,False
 
 
 
@@ -290,12 +290,12 @@ def coop_state_detail(request, coop_id, state):
         for av in coop.attribute_values.filter(attribute__in=attributes)
     }
 
-    history = coop.state_history.filter(new_state=state).last()
+    # history = coop.state_history.filter(new_state=state).last()
 
     return render(request, 'coop_state_detail.html', {
         'coop': coop,
         'state': state,
-        'history': history,
+        # 'history': history,
         'step': step,
         'attributes': attributes,
         'attribute_values': attribute_values
@@ -311,12 +311,139 @@ def coop_state_detail(request, coop_id, state):
 
 def dynamic_step_view(request, url_name, order_id=None):
     try:
-        step = Step.objects.get(url_name=url_name)
-        # اینجا می‌تونی بر اساس نوع step اقدام خاصی انجام بدی
-        return render(request, 'step_placeholder.html', {
-            'step': step,
-            'order_id': order_id,
-        })
+
+        if request.method == 'POST':
+            coop_record = None  # در سطح بالا تعریف می‌کنیم که در except هم قابل دسترسی باشد
+            data = dict(request.POST.dict())
+            data.pop('csrfmiddlewaretoken', None)
+
+            image = None
+            image_data = request.POST.get('image_data')
+            if image_data:
+                format, imgstr = image_data.split(';base64,')
+                ext = format.split('/')[-1]
+                image = ContentFile(base64.b64decode(imgstr), name='captured_image.' + ext)
+                data.pop('image_data', None)
+
+
+            step = Step.objects.get(url_name=url_name)
+            stepNumber =step.order
+
+            coop_record = coops.objects.filter(id=order_id).first()
+
+
+            if coop_record is None:
+                raise Exception("هیچ کوپی ثبت نشد")
+            
+            coop_record.state = step
+            coop_record.save()
+
+
+            # ثبت ویژگی‌های دینامیک
+            attributes = CoopAttribute.objects.filter(step=stepNumber)
+            # for attr in attributes:
+            #     field_name = f'attr_{attr.id}'
+            #     value = request.POST.get(field_name, '').strip()
+
+            #     if attr.required and not value:
+            #         messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
+            #         raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+
+            #     if value:
+            #         CoopAttributeValue.objects.create(
+            #             coop=coop_record,
+            #             attribute=attr,
+            #             value=value
+            #         )
+
+
+
+
+            for attr in attributes:
+                field_name = f'attr_{attr.id}'
+
+                if attr.field_type == 'multi_select':
+                    values = request.POST.getlist(field_name)
+                    if attr.required and not values:
+                        messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
+                        raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+
+                    # حذف مقادیر قبلی
+                    CoopAttributeValue.objects.filter(coop=coop_record, attribute=attr).delete()
+
+                    # ذخیره مقادیر جدید
+                    for val in values:
+                        CoopAttributeValue.objects.create(
+                            coop=coop_record,
+                            attribute=attr,
+                            value=val
+                        )
+
+                else:
+                    value = request.POST.get(field_name, '').strip()
+
+                    if attr.required and not value:
+                        messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
+                        raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+
+                    if value:
+                        CoopAttributeValue.objects.create(
+                            coop=coop_record,
+                            attribute=attr,
+                            value=value
+                        )
+
+
+
+
+
+
+
+
+            messages.success(request, "مقادیر با موفقیت ثبت شدند.")
+            return render(request, 'success_page.html', {'content': f'{step.title} با موفقیت ثبت گردید'})
+
+
+
+
+
+        else:
+            
+            step = Step.objects.get(url_name=url_name)
+
+            steps = Step.objects.order_by('order')  # مرتب‌سازی مراحل
+            stepNumber =step.order
+            attributes = CoopAttribute.objects.filter(step=step.order)
+
+            mother_materials = mother_material.objects.prefetch_related('mother_material').order_by('describe').all()
+
+            can_submit, is_confirmed = get_submit_and_confirmed(user=request.user, stepNumber=stepNumber)
+
+            coop_record = coops.objects.filter(id=order_id).first()
+            # اگر کوپ وجود داشت، مقادیر ثبت شده قبلی را بگیر
+            attribute_values = {}
+            if coop_record:
+                values = CoopAttributeValue.objects.filter(coop=coop_record)
+                for val in values:
+                    attribute_values[val.attribute.id] = val.value
+
+            warehouses = Warehouse.objects.all()
+            materials = raw_material.objects.all()
+
+
+            # اینجا می‌تونی بر اساس نوع step اقدام خاصی انجام بدی
+            return render(request, 'step_placeholder.html', {
+                'step': step,
+                'order_id': order_id,
+                'steps':steps,
+                'is_confirmed': is_confirmed,
+                'can_submit': can_submit,
+                'mother_materials':mother_materials,
+                'attributes':attributes,
+                'attribute_values': attribute_values,  # 👈 ارسال به قالب
+                'warehouses': warehouses,
+                'materials': materials,
+            })
     except Step.DoesNotExist:
         return render(request, 'step_not_found.html', {
             'url_name': url_name

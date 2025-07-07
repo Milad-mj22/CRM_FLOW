@@ -2,16 +2,319 @@
 
 
 
+{% extends "stone_flow.html" %}
+{% load custom_filters %}
 
-{% extends "users/base.html" %}
+
+{% block title %} Home Page {% endblock title %}
+{% block content2 %}
+
 {% load static %}
 
-{% block content %}
 
-<div class="text-center mt-5" style="direction: rtl;">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+<style>
+    .alert-custom {
+        direction: rtl;
+        text-align: right;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 15px;
+        font-weight: 500;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .alert-custom i {
+        margin-left: 10px;
+        font-size: 18px;
+    }
+
+    .alert-success-custom {
+        background-color: #e6f9f0;
+        color: #027a4e;
+        border: 1px solid #6fe2b3;
+    }
+
+    .alert-error-custom {
+        background-color: #fdecea;
+        color: #a94442;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-custom .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: inherit;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+
+    select#mine_id {
+        direction: rtl;
+        text-align: right;
+    }
+
+
+  select.form-select {
+    font-family: 'Vazirmatn', 'IRANSans', Tahoma;
+    font-size: 16px;
+    padding: 8px 12px;
+  }
+
+  label.form-label {
+    font-weight: 500;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  .card {
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+  }
+
+
+
+</style>
+
+<!-- <div class="text-center mt-5" style="direction: rtl;">
   <h3 class="mb-4">🧩 مرحله {{ step.order }}: {{ step.title }}</h3>
   <p>محتوای این مرحله هنوز طراحی نشده است.</p>
 </div>
+
+ -->
+
+
+<script>
+  $(document).ready(function() {
+    $('.multi-select').select2({
+      placeholder: "انتخاب کنید...",
+      width: '100%'
+    });
+  });
+</script>
+ 
+
+<body>
+
+
+<div class="container-fluid p-0 m-0">  
+    <div class="card page-title-card shadow-lg rounded-lg p-4 mb-4">
+        <h1 class="page-title">{{step.title}}</h1>
+    </div>
+
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="user-info">
+            <div class="avatar">
+                {{ request.user.username|first|upper }} 
+            </div>
+            <div class="user-details">
+                <p><strong>کاربر:</strong> {{ request.user.username }}</p>
+                <p><strong>سمت:</strong> {{ request.user.profile.job_position.name }}</p>
+            </div>
+        </div>
+
+
+
+<div class="row mb-3" style="direction: rtl;">
+    {% for attr in attributes %}
+        <div class="col-md-4 mb-3">
+            <label for="attr_{{ attr.id }}" class="form-label text-end d-block fw-bold">
+                {{ attr.label }}
+                {% if attr.required %}
+                    <span class="text-danger">*</span>
+                {% endif %}
+            </label>
+
+            {% with value=attribute_values|get_item:attr.id|default:'' %}
+                {% if attr.field_type == 'select' %}
+                    <select class="form-select text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
+                            {% if attr.required %}required{% endif %}>
+                        <option value="" disabled {% if not value %}selected{% endif %}>انتخاب کنید...</option>
+                        {% for option in attr.select_options|default_if_none:''|cut:" "|split:"," %}
+                            <option value="{{ option }}" {% if option == value %}selected{% endif %}>
+                                {{ option }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+
+
+
+                {% elif attr.field_type == 'multi_select' %}
+                    <div class="multi-checkbox-group">
+                    {% for option in attr.select_options|default_if_none:''|cut:" "|split:"," %}
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input"
+                              id="attr_{{ attr.id }}_{{ forloop.counter }}" 
+                              name="attr_{{ attr.id }}" value="{{ option }}" 
+                              {% if option in value_list %}checked{% endif %}>
+                        <label class="form-check-label" for="attr_{{ attr.id }}_{{ forloop.counter }}">
+                          {{ option }}
+                        </label>
+                      </div>
+                    {% endfor %}
+                  </div>
+
+
+
+                    
+                {% elif attr.field_type == 'int' or attr.field_type == 'float' %}
+                    <input type="number" class="form-control text-end"
+                           name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
+                           step="any" value="{{ value }}" {% if attr.required %}required{% endif %}>
+               
+               
+               
+                {% elif attr.field_type == 'bool' %}
+                    <div class="form-check text-end">
+                        <input type="checkbox" class="form-check-input" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}" {% if value == 'True' %}checked{% endif %}>
+                        <label class="form-check-label" for="attr_{{ attr.id }}">تأیید</label>
+                    </div>
+
+                {% elif attr.field_type == 'material' %}
+                    <select name="attr_{{ attr.id }}" class="form-select text-end">
+                        <option value="">انتخاب ماده اولیه</option>
+                        {% for m in materials %}
+                            <option value="{{ m.id }}" {% if value == m.id|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                {% elif attr.field_type == 'warehouse' %}
+                    <select name="attr_{{ attr.id }}" class="form-select text-end">
+                        <option value="">انتخاب انبار</option>
+                        {% for w in warehouses %}
+                            <option value="{{ w.id }}" {% if value == w.id|stringformat:"s" %}selected{% endif %}>{{ w.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                {% elif attr.field_type == 'image' %}
+                    <input type="file" class="form-control" name="attr_{{ attr.id }}" accept="image/*">
+
+                {% else %}
+                    <input type="text" class="form-control text-end" name="attr_{{ attr.id }}" value="{{ value }}" {% if attr.required %}required{% endif %}>
+    {% endif %}               
+               
+
+            {% endwith %}
+        </div>
+    {% endfor %}
+</div>
+
+        {% if can_submit %}
+            {% if not is_confirmed %}
+            <div class="text-end mt-3">
+                <button type="submit" class="btn btn-primary btn-sm">ثبت درخواست</button>
+            </div>
+            {% else %}
+            <div class="confirmation-bar">
+                <i class="fas fa-check-circle"></i>
+                تأیید شده توسط {{ is_confirmed.confirmed_by.user.username }}
+                <a href="{% url 'edit_request' order_id step_number %}" class="btn btn-warning btn-sm">ویرایش</a>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="confirmation-bar">
+                {% if is_confirmed %}
+                <i class="fas fa-check-circle"></i>
+                تأیید شده توسط  {{ is_confirmed.confirmed_by.user.username }}
+                {% else %}
+                <i class="fas fa-error-circle"></i>
+                دسترسی ندارید در انتظار تایید
+                {% endif %}
+            </div>
+        {% endif %}
+    </form>
+
+</div>
+
+</body>
+
+
+    
+<script>
+    const cameraBtn = document.getElementById('cameraBtn');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const imageInput = document.getElementById('image_data');
+    let stream = null;
+    let cameraOn = false;
+
+    cameraBtn.addEventListener('click', async () => {
+        if (!cameraOn) {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                canvas.style.display = 'none';
+                cameraBtn.textContent = 'گرفتن عکس';
+                cameraOn = true;
+            } catch (error) {
+                alert('دسترسی به دوربین ممکن نیست: ' + error);
+            }
+        } else {
+            // گرفتن عکس
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // نمایش عکس و مخفی کردن ویدئو
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+
+            // قطع کردن دوربین
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+
+            cameraBtn.textContent = 'باز کردن دوربین';
+            cameraOn = false;
+
+            // مقدار Base64 عکس را داخل input مخفی قرار بده
+            const imageDataUrl = canvas.toDataURL('image/png');
+            imageInput.value = imageDataUrl;
+
+            console.log('Captured Image Data URL set to hidden input');
+        }
+    });
+
+
+
+
+document.getElementById('full_weight').addEventListener('input', updateNetWeight);
+document.getElementById('empty_weight').addEventListener('input', updateNetWeight);
+
+function updateNetWeight() {
+    const full = parseFloat(document.getElementById('full_weight').value) || 0;
+    const empty = parseFloat(document.getElementById('empty_weight').value) || 0;
+    const net = full - empty;
+    document.getElementById('net_weight').value = net > 0 ? net.toFixed(1) : 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+</script>
+
 
 
 {% endblock %}

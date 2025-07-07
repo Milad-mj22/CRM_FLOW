@@ -14,7 +14,7 @@ urlpatterns = [
     path('coops/', coops_by_state, name='coop_list'),
     path('coops/<int:coop_id>/', coop_detail, name='coop_detail'),
     path('dashboard/', coop_dashboard, name='coop_dashboard'),
-    path('coop/<int:coop_id>/state/<str:state>/', coop_state_detail, name='coop_state_detail'),
+    # path('coop/<int:coop_id>/state/<str:state>/', coop_state_detail, name='coop_state_detail'),
 
     path('register/driver/', register_driver, name='register_driver'),
     path('drivers/', driver_list_view, name='driver_list'),
