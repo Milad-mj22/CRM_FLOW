@@ -106,8 +106,23 @@
                     <p><strong>مقدار:</strong> {{ coop.quantity }}</p>
                     <p><strong>کاربر ثبت‌کننده:</strong> {{ coop.user.username }}</p>
                     <p><strong>تاریخ ثبت:</strong> {{ coop.submitted_at|date:"Y-m-d H:i" }}</p>
+
+                    {% for attr in short_attributes %}
+                    {% with val=coop_values|get_item:coop.id|get_item:attr.id %}
+                        {% if val %}
+                        <p class="card-text mb-1">
+                            <strong>{{ attr.label }}:</strong> {{ val }}
+                        </p>
+                        {% endif %}
+                    {% endwith %}
+                    {% endfor %}
+
+
                 </div>
             </div>
+
+
+            
 
 
             

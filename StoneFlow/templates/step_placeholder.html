@@ -132,7 +132,8 @@
 
 <div class="row mb-3" style="direction: rtl;">
     {% for attr in attributes %}
-        <div class="col-md-4 mb-3">
+        <!-- <div class="col-md-4 mb-3"> -->
+        <div class="{% if attr.field_type == 'material' %}col-12{% else %}col-md-4 mb-3{% endif %}">
             <label for="attr_{{ attr.id }}" class="form-label text-end d-block fw-bold">
                 {{ attr.label }}
                 {% if attr.required %}
@@ -187,12 +188,18 @@
                     </div>
 
                 {% elif attr.field_type == 'material' %}
-                    <select name="attr_{{ attr.id }}" class="form-select text-end">
-                        <option value="">انتخاب ماده اولیه</option>
+                    <!-- <select name="attr_{{ attr.id }}" class="form-select text-end"> -->
+                        <!-- <option value="">انتخاب ماده اولیه</option>
                         {% for m in materials %}
                             <option value="{{ m.id }}" {% if value == m.id|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
-                        {% endfor %}
-                    </select>
+                        {% endfor %} -->
+                    <!-- </select> -->
+
+
+
+                        {% include 'partials/raw_material.html' with coops=coops %}
+
+
 
                 {% elif attr.field_type == 'warehouse' %}
                     <select name="attr_{{ attr.id }}" class="form-select text-end">

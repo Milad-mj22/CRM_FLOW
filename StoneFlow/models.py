@@ -188,5 +188,13 @@ class Driver(models.Model):
 
 
 
+class AttributeGroup(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="نام گروه ویژگی‌ها")
+    attributes = models.ManyToManyField('CoopAttribute', related_name='groups', verbose_name="ویژگی‌ها")
+
+    def __str__(self):
+        return self.name
+
+
 
 

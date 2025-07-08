@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from .models import CoopAttribute, CoopAttributeValue
+from .models import AttributeGroup, CoopAttribute, CoopAttributeValue
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
@@ -20,9 +20,20 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 
+from openpyxl import Workbook
+from django.http import HttpResponse
 
-def get_allowed_confirm_users(stepNumber:int):
+def get_allowed_confirm_users(stepNumber:int,user):
 
+    access = StepAccess.objects.filter(step=stepNumber,user=user)
+
+    allowed_roles = []
+
+    if access.exists():
+            access = access.first()
+            if access.access_level=='submit':
+                return True
+    return False
     if stepNumber==1:
         allowed_roles = ['manager', 'fishzan','Programmer','Driver']  # Adjust based on your logic
         return allowed_roles
@@ -44,11 +55,12 @@ def get_allowed_confirm_users(stepNumber:int):
 
 def get_submit_and_confirmed(user,stepNumber):
         try:
-            user_profile = Profile.objects.get(user=user)
-            user_role = user_profile.job_position.name
-            allowed_roles = get_allowed_confirm_users(stepNumber=stepNumber)
+            # user_profile = Profile.objects.get(user=user)
+            # user_profile = User.objects.get(user=user)
+            # user_role = user_profile.job_position.name
+            can_submit = get_allowed_confirm_users(stepNumber=stepNumber,user=user)
             # Check if the user has access to submit this step
-            can_submit = user_role in allowed_roles
+            # can_submit = user_role in allowed_roles
             # is_confirmed = check_order_confirmed(order=ret,stepNumber=1)
             is_confirmed = False
             return can_submit , is_confirmed
@@ -92,12 +104,25 @@ def coops_by_state(request):
 
 def coop_detail(request, coop_id):
     coop = get_object_or_404(coops, id=coop_id)
-
     user_access_qs = StepAccess.objects.filter(user=request.user)
     step_access = {access.step.id: access.access_level for access in user_access_qs}
 
 
-    return render(request, 'coop_detail.html', {'coop': coop,'step_access':step_access})
+
+    short_card_group = AttributeGroup.objects.get(name='short_card')
+    short_attributes = short_card_group.attributes.all()
+
+    coop_values = {}
+    values = CoopAttributeValue.objects.filter(coop=coop, attribute__in=short_attributes)
+    coop_values[coop.id] = {val.attribute.id: val.value for val in values}
+
+
+
+    return render(request, 'coop_detail.html', {'coop': coop,
+                                                'step_access':step_access,
+                                                'short_attributes': short_attributes,
+                                                'coop_values': coop_values
+                                                })
 
 
 
@@ -116,10 +141,24 @@ def coop_dashboard(request):
         qs = qs.filter(material_id=material_id)
         selected_material = raw_material.objects.filter(id=material_id).first()
 
-    # آماده‌سازی داده برای چارت‌ها
-    state_counts = {}
-    for state_code, state_name in coops._meta.get_field('state').choices:
-        state_counts[state_name] = qs.filter(state=state_code).count()
+    # # آماده‌سازی داده برای چارت‌ها
+    # state_counts = {}
+    # for state_code, state_name in coops._meta.get_field('state').choices:
+    #     state_counts[state_name] = qs.filter(state=state_code).count()
+
+
+    from django.db.models import Count
+
+    # شمارش تعداد کوپ‌ها در هر وضعیت (مرحله)
+    state_counts_raw = qs.values('state__title').annotate(count=Count('id'))
+
+    # تبدیل به دیکشنری قابل استفاده: { 'عنوان وضعیت': تعداد }
+    state_counts = {
+        item['state__title']: item['count']
+        for item in state_counts_raw
+    }
+
+
 
     chart_labels = list(state_counts.keys())
     chart_data = list(state_counts.values())
@@ -356,6 +395,23 @@ def dynamic_step_view(request, url_name, order_id=None):
             #             value=value
             #         )
 
+            # ثبت مواد خام
+            for field, value in data.items():
+                if not field.startswith('attr_'):
+                    try:
+                        if value and float(value) > 0:
+                            raw_material_obj = raw_material.objects.get(name=field)
+                            coop_record = coops.objects.create(
+                                user=request.user,
+                                material=raw_material_obj,
+                                quantity=Decimal(value),
+                                state = step,
+                                image=image
+                            )
+                    except Exception as e:
+                        # raise Exception(f"خطا در ثبت مواد اولیه: {field}")
+                        print('Error is Save Raw amterial', field)
+
 
 
 
@@ -385,14 +441,24 @@ def dynamic_step_view(request, url_name, order_id=None):
                     if attr.required and not value:
                         messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
                         raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+                   
+                    CoopAttributeValue.objects.filter(coop=coop_record, attribute=attr).delete()
+
 
                     if value:
+                        # شرط خاص برای مواد اولیه: فقط اگر مقدار عددی > 0 بود
+                        if attr.field_type == 'material':
+                            try:
+                                if float(value) <= 0:
+                                    continue  # ذخیره نکن
+                            except ValueError:
+                                continue  # اگر مقدار نامعتبر بود هم ذخیره نکن
+
                         CoopAttributeValue.objects.create(
                             coop=coop_record,
                             attribute=attr,
                             value=value
                         )
-
 
 
 
@@ -460,7 +526,7 @@ def dynamic_step_view(request, url_name, order_id=None):
 # views.py
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import CoopAttributeForm, DriverRegisterForm, StepForm
+from .forms import AttributeGroupForm, CoopAttributeForm, DriverRegisterForm, StepForm
 
 from users.models import jobs,User,Profile
 from django.db import transaction
@@ -488,13 +554,6 @@ def register_driver(request):
                         last_name=form.cleaned_data['last_name'],
                     )
 
-                    # # دریافت موقعیت شغلی "راننده"
-                    # try:
-                    #     driver_job = jobs.objects.get(persian_name="راننده")
-                    # except jobs.DoesNotExist:
-                    #     messages.error(request, "شغل 'راننده' در سیستم تعریف نشده است. لطفاً با مدیر تماس بگیرید.")
-                    #     user.delete()  # حذف کاربر
-                    #     return render(request, 'drivers/register_driver.html', {'form': form})
 
                     # ساخت پروفایل
 
@@ -719,3 +778,84 @@ def delete_step(request, step_id):
     step.delete()
     messages.success(request, "مرحله با موفقیت حذف شد.")
     return redirect('steps_list')
+
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import AttributeGroup, CoopAttribute
+from .forms import AttributeGroupForm
+
+def manage_attribute_groups(request):
+    groups = AttributeGroup.objects.prefetch_related('attributes')
+    form = AttributeGroupForm()
+
+    edit_group_obj = None
+    edit_form = None
+
+    if request.method == 'POST':
+        edit_id = request.POST.get('edit_id')
+        if edit_id:
+            # ویرایش
+            edit_group_obj = get_object_or_404(AttributeGroup, pk=edit_id)
+            edit_form = AttributeGroupForm(request.POST, instance=edit_group_obj)
+            if edit_form.is_valid():
+                edit_form.save()
+                messages.success(request, '✅ گروه با موفقیت ویرایش شد.')
+                return redirect('attribute_group_view')
+        else:
+            # ساخت جدید
+            form = AttributeGroupForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, '✅ گروه با موفقیت ساخته شد.')
+                return redirect('attribute_group_view')
+
+    elif request.method == 'GET' and 'edit_id' in request.GET:
+        edit_id = request.GET['edit_id']
+        edit_group_obj = get_object_or_404(AttributeGroup, pk=edit_id)
+        edit_form = AttributeGroupForm(instance=edit_group_obj)
+
+    return render(request, 'attribute_group.html', {
+        'form': form,
+        'groups': groups,
+        'edit_group_obj': edit_group_obj,
+        'edit_form': edit_form
+    })
+
+def delete_group(request, pk):
+    group = get_object_or_404(AttributeGroup, pk=pk)
+    group.delete()
+    messages.success(request, '🗑️ گروه با موفقیت حذف شد.')
+    return redirect('attribute_group_view')  # مسیر مناسب را قرار بده
+
+
+
+
+
+@login_required
+def export_group_excel(request, group_id):
+    group = get_object_or_404(AttributeGroup, id=group_id)
+    coop_values = CoopAttributeValue.objects.filter(attribute__in=group.attributes.all())
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "گزارش ویژگی‌ها"
+
+    ws.append(["ویژگی", "مقدار", "مربوط به کوپ", "تاریخ"])
+
+    for value in coop_values:
+        ws.append([
+            value.attribute.label,
+            value.value,
+            value.coop.id if value.coop else '',
+            value.created_at.strftime("%Y-%m-%d") if hasattr(value, 'created_at') else ''
+        ])
+
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = f'attachment; filename="{group.name}.xlsx"'
+    wb.save(response)
+    return response

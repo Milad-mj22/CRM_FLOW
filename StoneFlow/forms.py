@@ -1,7 +1,7 @@
 # forms.py
 from django import forms
 from django.contrib.auth.models import User
-from .models import Driver, CarModel
+from .models import AttributeGroup, Driver, CarModel
 
 from django import forms
 from django.contrib.auth.models import User
@@ -114,40 +114,6 @@ class DriverRegisterForm(forms.ModelForm):
 
 from .models import CoopAttribute
 
-# class CoopAttributeForm(forms.ModelForm):
-#     class Meta:
-#         model = CoopAttribute
-#         fields = ['label', 'field_type', 'required', 'default_value', 'step']
-#         labels = {
-#             'label': 'عنوان فیلد',
-#             'field_type': 'نوع فیلد',
-#             'step': 'مرحله نمایش',
-#             'required': 'الزامی است؟',
-#             'default_value': 'مقدار پیش‌فرض',
-#         }
-#         widgets = {
-#             'label': forms.TextInput(attrs={'class': 'form-control'}),
-#             'field_type': forms.Select(attrs={'class': 'form-select'}),
-#             'step': forms.Select(attrs={'class': 'form-select'}),  # 👈 همین فیلد از STEP_CHOICES می‌خونه
-#             'required': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-#             'default_value': forms.TextInput(attrs={'class': 'form-control'}),
-#         }
-
-#     def clean_label(self):
-#         label = self.cleaned_data.get('label')
-#         qs = CoopAttribute.objects.filter(label=label)
-#         if self.instance.pk:
-#             qs = qs.exclude(pk=self.instance.pk)
-#         if qs.exists():
-#             raise forms.ValidationError("این عنوان قبلاً استفاده شده است. لطفاً عنوان یکتایی وارد کنید.")
-#         return label
-
-
-
-
-
-
-
 
 
 
@@ -202,4 +168,21 @@ class StepForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'order': forms.NumberInput(attrs={'class': 'form-control'}),
             'url_name': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+
+
+
+class AttributeGroupForm(forms.ModelForm):
+    class Meta:
+        model = AttributeGroup
+        fields = ['name', 'attributes']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'attributes': forms.SelectMultiple(attrs={'class': 'form-select multi-select', 'multiple': 'multiple'})
+        }
+        labels = {
+            'name': 'نام گزارش',
+            'attributes': 'ویژگی‌های انتخابی'
         }

@@ -13,7 +13,7 @@
 
                 <div class="card-body">
                     <h5 class="card-title"><i class="bi bi-box-seam me-1"></i> {{ coop.material.name }}</h5>
-                    <p class="card-text mb-1"><strong>وضعیت:</strong> <span class="badge bg-secondary">{{ coop.get_state_display }}</span></p>
+                    <p class="card-text mb-1"><strong>وضعیت:</strong> <span class="badge bg-secondary">{{ coop.state }}</span></p>
                     <p class="card-text mb-1"><strong>کاربر:</strong> {{ coop.user.username }}</p>
                     <p class="card-text mb-1"><strong>مقدار:</strong> {{ coop.quantity }}</p>
                     <p class="card-text text-muted"><small><i class="bi bi-clock"></i> {{ coop.submitted_at|date:"Y-m-d H:i" }}</small></p>

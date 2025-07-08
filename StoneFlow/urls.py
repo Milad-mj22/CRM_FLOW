@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, delete_driver_view, delete_step, driver_list_view, dynamic_step_view, edit_driver, manage_access, manage_coop_attributes, manage_step, register_driver, steps_list
+from .views import  create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, delete_driver_view, delete_group, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, register_driver, steps_list
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -29,6 +29,11 @@ urlpatterns = [
     # path('<str:url_name>/<int:order_id>/', dynamic_step_view, name='dynamic_step'),
 
 
+    # urls.py
+    path('admin/attribute-groups/', manage_attribute_groups, name='attribute_group_view'),
+    path('group/<int:pk>/delete/', delete_group, name='delete_group'),
+
+    path('export-group/<int:group_id>/', export_group_excel, name='export_group_excel'),
 
 
     # path('admin/steps/create/', manage_step, name='create_step'),
