@@ -1,0 +1,67 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-5" style="direction: rtl;">
+  <div class="card shadow rounded-4 p-4">
+    <h4 class="fw-bold text-center text-primary mb-4">📄 پیش‌فاکتور ساخته شده</h4>
+
+    <div class="row">
+      <!-- Excel Image Preview (Optional) -->
+      {% if image_url %}
+      <div class="col-md-4 text-center mb-4">
+        <h6 class="fw-bold">📸 تصویر از فایل اکسل</h6>
+        <img src="{{ image_url }}" class="img-fluid border rounded shadow-sm" alt="Excel Snapshot">
+      </div>
+      {% endif %}
+
+      <!-- PDF Preview -->
+      <div class="col-md-8">
+        <h6 class="fw-bold text-center">🖨️ پیش‌نمایش فایل PDF</h6>
+        <iframe src="{{ pdf_url }}" width="100%" height="600px" style="border: 1px solid #ccc;" class="rounded"></iframe>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="text-center mt-4">
+      <a href="{{ excel_url }}" class="btn btn-outline-success mx-2" download>
+        📥 دانلود فایل Excel
+      </a>
+
+      <a href="{{ pdf_url }}" class="btn btn-outline-danger mx-2" download>
+        🖨️ دانلود PDF
+      </a>
+
+      <button onclick="copyShareLink()" class="btn btn-outline-primary mx-2">
+        🔗 اشتراک‌گذاری لینک
+      </button>
+    </div>
+
+    <input type="text" id="shareLink" class="form-control mt-3 text-center" readonly
+           value="{{ pdf_url }}" style="display: none;">
+
+  </div>
+</div>
+
+<script>
+  function copyShareLink() {
+    const input = document.getElementById("shareLink");
+    input.style.display = "block";
+    input.select();
+
+    if (navigator.clipboard && window.isSecureContext) {
+      // استفاده از API مدرن کلیپ‌بورد
+      navigator.clipboard.writeText(input.value).then(() => {
+        alert("لینک پیش‌فاکتور کپی شد!");
+      }, () => {
+        alert("خطا در کپی لینک!");
+      });
+    } else {
+      // روش قدیمی‌تر
+      document.execCommand("copy");
+      alert("لینک پیش‌فاکتور کپی شد!");
+    }
+  }
+</script>
+
+{% endblock %}

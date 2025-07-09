@@ -1,10 +1,17 @@
+import os
+import tempfile
+import time
+import uuid
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+import openpyxl
+import win32com.client
+
 from .models import AttributeGroup, CoopAttribute, CoopAttributeValue
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
-from users.models import Profile, Warehouse, mother_material , raw_material
+from users.models import Buyer, Profile, Warehouse, mother_material , raw_material
 # Create your views here.
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
@@ -12,7 +19,7 @@ from decimal import Decimal
 from django.core.files.base import ContentFile
 import base64
 from django.db.models import Q
-
+from django.conf import settings
 
 from .models import Driver, coops, STATE_CHOICES
 # views.py
@@ -859,3 +866,122 @@ def export_group_excel(request, group_id):
     response['Content-Disposition'] = f'attachment; filename="{group.name}.xlsx"'
     wb.save(response)
     return response
+
+
+
+import pythoncom
+import win32com.client
+
+def convert_excel_to_pdf(excel_path, pdf_path):
+    pythoncom.CoInitialize()  # 👈 مهم
+    try:
+        excel = win32com.client.Dispatch("Excel.Application")
+        excel.Visible = False
+
+        wb = excel.Workbooks.Open(excel_path)
+        wb.ExportAsFixedFormat(0, pdf_path)  # 0 = PDF
+        wb.Close(False)
+        excel.Quit()
+    finally:
+        pythoncom.CoUninitialize()
+
+
+@login_required
+def create_preinvoice_view(request):
+    if request.method == 'POST':
+        customer_id = request.POST.get('customer')
+        customer = Buyer.objects.get(id=customer_id)
+
+        selected_ids = request.POST.getlist('selected_coops')
+        selected_coops = coops.objects.filter(id__in=selected_ids)
+
+        # Load template
+        template_path = 'media/templates/preinvoice_template.xlsx'
+        wb = openpyxl.load_workbook(template_path)
+        ws = wb.active
+
+        # Write customer info
+        ws['B5'] =  f'{customer.first_name} {customer.last_name}'
+        ws['G5'] =  f'{customer.phone_number}'
+        ws['B6'] =  f'{customer.address}'
+
+        # Write coop rows (starting from row 5)
+        row =8
+        col_start = 1
+
+        total_price = 0
+        total_discount = 0
+
+        for iter,coop in enumerate(selected_coops):
+            material_name = coop.material.name
+            quantity = coop.quantity
+            try:
+                price = float(request.POST.get(f'price_{coop.id}', '0'))
+            except:
+                price = 0
+            discount = float(request.POST.get(f'discount_{coop.id}', '0'))
+            total = quantity * price * (100 - discount) / 100
+
+            ws.cell(row=row, column=col_start, value=iter+1)
+            ws.cell(row=row, column=col_start+1, value=material_name)
+            ws.cell(row=row, column=col_start+2, value=0)
+            ws.cell(row=row, column=col_start+3, value=quantity)
+            ws.cell(row=row, column=col_start+4, value=float(price))
+            ws.cell(row=row, column=col_start+5, value=float(discount))
+            ws.cell(row=row, column=col_start+6, value=float(total))
+            total_price+=(float(total))
+            total_discount+=(float(discount))
+            row += 1
+
+        ws['G15'] =  total_price
+        ws['G16'] =  total_discount
+        ws['G17'] =  total_price - total_discount
+
+        # Save to temp file and return as response
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+            wb.save(tmp.name)
+            tmp.seek(0)
+            file_data = tmp.read()
+
+        filename_base = f"preinvoice_{customer.first_name}_{customer.last_name}_{uuid.uuid4().hex[:6]}"
+        media_dir = os.path.join(settings.MEDIA_ROOT, "preinvoices")
+        os.makedirs(media_dir, exist_ok=True)
+
+        excel_path = os.path.join(media_dir, f"{filename_base}.xlsx")
+        pdf_path = os.path.join(media_dir, f"{filename_base}.pdf")
+
+        # Save Excel file
+        wb.save(excel_path)
+
+        # Convert to PDF
+        convert_excel_to_pdf(excel_path, pdf_path)
+
+        # Redirect to preview page
+        return redirect("preview_preinvoice", filename=filename_base)
+
+
+
+        response = HttpResponse(file_data, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="preinvoice_{customer.first_name}_{customer.last_name}_{time.time()}.xlsx"'
+        os.unlink(tmp.name)  # Delete the temp file
+        return response
+
+    else:
+        coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
+        customers = Buyer.objects.all()
+
+        return render(request, 'create_preinvoice.html', {
+            'coops': coops_final,
+            'customers': customers,
+        })
+    
+
+def show_preinvoce_result(request,filename):
+
+    context = {
+        'pdf_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.pdf"),
+        'excel_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.xlsx"),
+        'image_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.png"),  # Optional
+    }
+
+    return render(request, 'preinvoice_result.html', context)
