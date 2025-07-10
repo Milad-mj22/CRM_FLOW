@@ -1,3 +1,4 @@
+import io
 import os
 import tempfile
 import time
@@ -29,6 +30,11 @@ from django.template.loader import render_to_string
 
 from openpyxl import Workbook
 from django.http import HttpResponse
+
+import jdatetime
+from datetime import datetime
+
+
 
 def get_allowed_confirm_users(stepNumber:int,user):
 
@@ -896,7 +902,31 @@ def create_preinvoice_view(request):
         selected_coops = coops.objects.filter(id__in=selected_ids)
 
         # Load template
-        template_path = 'media/templates/preinvoice_template.xlsx'
+
+
+
+
+        # تاریخ امروز میلادی
+        today_gregorian = datetime.today()
+
+
+
+
+        language = request.POST.get('language', 'fa')
+        # Retrieve other form data like customer, coops, prices...
+
+        if language == 'fa':
+            template_path = 'media/templates/preinvoice_template.xlsx'
+            # تبدیل به جلالی
+            today_gregorian = jdatetime.datetime.fromgregorian(datetime=today_gregorian)
+
+
+        else:
+            template_path = 'media/templates/en_preinvoice_template.xlsx'
+
+        today_gregorian = today_gregorian.strftime('%Y/%m/%d')
+
+
         wb = openpyxl.load_workbook(template_path)
         ws = wb.active
 
@@ -904,6 +934,7 @@ def create_preinvoice_view(request):
         ws['B5'] =  f'{customer.first_name} {customer.last_name}'
         ws['G5'] =  f'{customer.phone_number}'
         ws['B6'] =  f'{customer.address}'
+        ws['G4'] =  f'{today_gregorian}'
 
         # Write coop rows (starting from row 5)
         row =8
@@ -979,9 +1010,102 @@ def create_preinvoice_view(request):
 def show_preinvoce_result(request,filename):
 
     context = {
+        
         'pdf_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.pdf"),
         'excel_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.xlsx"),
         'image_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.png"),  # Optional
     }
 
     return render(request, 'preinvoice_result.html', context)
+
+
+from openpyxl.styles import Font, Alignment
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+
+
+
+@csrf_exempt  # optional, only if CSRF becomes a problem with external posts
+def create_english_invoice(request):
+    if request.method == 'POST':
+        customer_id = request.POST.get('customer')
+        if customer_id is None:
+            return HttpResponseForbidden("مشتری یافت نشد")
+
+        customer = Buyer.objects.get(id=customer_id)
+
+        selected_ids = request.POST.getlist('selected_coops')
+        selected_coops = coops.objects.filter(id__in=selected_ids)
+
+        # Load template
+
+
+
+
+        wb = openpyxl.load_workbook(template_path)
+        ws = wb.active
+
+        # Write customer info
+        ws['B5'] =  f'{customer.first_name} {customer.last_name}'
+        ws['G5'] =  f'{customer.phone_number}'
+        ws['B6'] =  f'{customer.address}'
+
+        # Write coop rows (starting from row 5)
+        row =8
+        col_start = 1
+
+        total_price = 0
+        total_discount = 0
+
+        for iter,coop in enumerate(selected_coops):
+            material_name = coop.material.name
+            quantity = coop.quantity
+            try:
+                price = float(request.POST.get(f'price_{coop.id}', '0'))
+            except:
+                price = 0
+            discount = float(request.POST.get(f'discount_{coop.id}', '0'))
+            total = quantity * price * (100 - discount) / 100
+
+            ws.cell(row=row, column=col_start, value=iter+1)
+            ws.cell(row=row, column=col_start+1, value=material_name)
+            ws.cell(row=row, column=col_start+2, value=0)
+            ws.cell(row=row, column=col_start+3, value=quantity)
+            ws.cell(row=row, column=col_start+4, value=float(price))
+            ws.cell(row=row, column=col_start+5, value=float(discount))
+            ws.cell(row=row, column=col_start+6, value=float(total))
+            total_price+=(float(total))
+            total_discount+=(float(discount))
+            row += 1
+
+        ws['G15'] =  total_price
+        ws['G16'] =  total_discount
+        ws['G17'] =  total_price - total_discount
+
+        # Save to temp file and return as response
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+            wb.save(tmp.name)
+            tmp.seek(0)
+            file_data = tmp.read()
+
+        filename_base = f"preinvoice_{customer.first_name}_{customer.last_name}_{uuid.uuid4().hex[:6]}"
+        media_dir = os.path.join(settings.MEDIA_ROOT, "preinvoices")
+        os.makedirs(media_dir, exist_ok=True)
+
+        excel_path = os.path.join(media_dir, f"{filename_base}.xlsx")
+        # pdf_path = os.path.join(media_dir, f"{filename_base}.pdf")
+
+        # Save to in-memory file
+        file_stream = io.BytesIO()
+        wb.save(file_stream)
+        file_stream.seek(0)
+
+        # Return response
+        response = HttpResponse(
+            file_stream,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename={excel_path}'
+        return response
+
+    return HttpResponse("Only POST allowed", status=405)

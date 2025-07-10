@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import  create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_preinvoice_view, delete_driver_view, delete_group, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, register_driver, show_preinvoce_result, steps_list
+from .views import  create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, delete_driver_view, delete_group, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, register_driver, show_preinvoce_result, steps_list
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -46,7 +46,7 @@ urlpatterns = [
 
     path('preInvoice/', create_preinvoice_view, name='driver_list'),
     path('preinvoice/preview/<str:filename>/', show_preinvoce_result, name='preview_preinvoice'),
-    
+    path('create-english-invoice/', create_english_invoice, name='create_english_invoice'),
     
     # path('orders/show_flow/<int:order_id>', show_flow, name='show_flow'),
 
