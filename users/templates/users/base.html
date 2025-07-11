@@ -37,6 +37,8 @@
       z-index: 1000;
       box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
       transition: all 0.3s ease;
+      overflow-y: auto;   /* فعال کردن اسکرول عمودی در صورت نیاز */
+      max-height: 100vh;  /* محدود کردن ارتفاع به ارتفاع پنجره نمایشگر */
     }
 
     .sidebar img {
@@ -66,6 +68,52 @@
       padding: 30px;
     }
 
+
+.user-info {
+    background: linear-gradient(135deg, #222222, #5f5f5f);
+    color: #fff;
+    padding: 15px 10px;
+    border-radius: 10px;
+    margin: 10px auto;
+    font-size: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    width: 90%;
+        align-items: flex-end;  /* راست‌چین کردن محتویات داخل */
+    text-align: right;      /* راست‌چین کردن متن */
+}
+
+.user-info .user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    
+}
+
+.user-info .avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    color: #1b5e20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 20px;
+    margin-left: 15px;
+    flex-shrink: 0;
+     order: 2;  /* قرار گرفتن آواتار در سمت چپ */
+}
+
+
+
+
+
     @media (max-width: 768px) {
       .sidebar {
         position: relative;
@@ -94,6 +142,9 @@
         margin-right: 0;
         padding: 20px;
       }
+      .user-info {
+        display: none !important;
+      }
     }
   </style>
 </head>
@@ -105,10 +156,24 @@
     <img src="{% static 'icons/logo.svg' %}" alt="لوگو KBC" />
     </a>
 
+
+  {% if request.user.is_authenticated %}
+    <div class="user-info">
+      <div class="avatar">
+        {{ request.user.username|first|upper }}
+      </div>
+      <div class="user-details">
+        <p><strong>کاربر:</strong> {{ request.user.username }}</p>
+        <p><strong>سمت:</strong> {{ request.user.profile.job_position.name }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+
     <a href="/tools"><i class="fas fa-tools me-2"></i> مدیریت</a>
-    <a href="/profile/{{ user.id }}/register_entry/"><i class="fas fa-list me-2"></i> ثبت تردد</a>
-    <a href="/profile/{{ user.id }}/history_entry/"><i class="fas fa-list-alt me-2"></i> نمایش کارکرد</a>
-    <a href="/profile"><i class="fas fa-user-circle me-2"></i> صفحه کاربر</a>
+    <!-- <a href="/profile/{{ user.id }}/register_entry/"><i class="fas fa-list me-2"></i> ثبت تردد</a> -->
+    <!-- <a href="/profile/{{ user.id }}/history_entry/"><i class="fas fa-list-alt me-2"></i> نمایش کارکرد</a> -->
+    <a href="/profile"><i class="fas fa-user-circle me-2"></i> پروفایل کاربر</a>
     <a href="/stone_flow/create_coope"><i class="fas fa-plus-circle me-2"></i> ایجاد کوپ</a>
     <a href="/stone_flow/coops"><i class="fas fa-cubes me-2"></i> کوپ‌های موجود</a>
     <a href="/stone_flow/dashboard"><i class="fas fa-chart-line me-2"></i> داشبورد</a>
@@ -118,9 +183,14 @@
     <a href="/profile/store"><i class="fas fa-box-open me-2"></i> موجودی</a>
     <a href="/profile/store_log"><i class="fas fa-history me-2"></i> تاریخچه</a>
     <a href="/profile/create_material"><i class="fas fa-box me-2"></i> تعریف کالای جدید</a>
+    {% if user.is_authenticated %}
+      <a href="/login/"><i class="fas fa-sign-out-alt me-2"></i> خروج</a>
+    {% else %}
+      <a href="/login/"><i class="fas fa-sign-in-alt me-2"></i> ورود</a>
+    {% endif %}
 
-<a href="/mines"><i class="bi bi-minecart-loaded me-2"></i> معادن</a>
-    <a href="/stone_flow/register/driver"><i class="bi bi-minecart-loaded me-2"></i> مدیریت راننده ها</a>
+    
+    <!-- <a href="/stone_flow/register/driver"><i class="bi bi-minecart-loaded me-2"></i> مدیریت راننده ها</a> -->
 
 
   </div>

@@ -379,3 +379,105 @@ class DailyReportForm(forms.ModelForm):
             'title': forms.Select(attrs={'class': 'form-select'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
+
+
+
+
+
+
+
+
+
+
+from django import forms
+from django.contrib.auth.models import User
+from .models import Profile, jobs
+
+
+class UserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput, required=True)
+    password_confirm = forms.CharField(widget=forms.PasswordInput, required=True, label="تکرار رمز عبور")
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password',]
+
+        labels = {
+            'username': 'نام کاربری',
+            'email': 'ایمیل آدرس',
+            'password': 'رمز عبور :',
+            'Password': 'رمز عبور :',
+
+        }
+
+
+
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("این نام کاربری قبلا ثبت شده است. لطفا نام دیگری انتخاب کنید.")
+        return username
+
+    def clean(self):
+        cleaned_data = super().clean()
+        p1 = cleaned_data.get("password")
+        p2 = cleaned_data.get("password_confirm")
+        if p1 and p2 and p1 != p2:
+            self.add_error('password_confirm', "رمز عبور و تکرار آن مطابقت ندارند.")
+        return cleaned_data
+    
+
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = [
+            'first_name', 'last_name', 'phone', 'address', 
+            'avatar', 'bio', 'job_position'
+        ]
+        labels = {
+            'first_name': 'نام',
+            'last_name': 'نام خانوادگی',
+            'phone': 'شماره تماس',
+            'address': 'آدرس',
+            'avatar': 'عکس پروفایل',
+            'bio': 'بیوگرافی',
+            'job_position': 'سمت شغلی',
+        }
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control text-end'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control text-end'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control text-end'}),
+            'address': forms.TextInput(attrs={'class': 'form-control text-end'}),
+            'avatar': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'bio': forms.Textarea(attrs={'class': 'form-control text-end', 'rows': 3}),
+            'job_position': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+
+
+
+from .models import jobs
+
+class JobForm(forms.ModelForm):
+    class Meta:
+        model = jobs
+        fields = ['name', 'persian_name', 'short_name', 'describe', 'level']
+    
+        labels = {
+            'name': 'نام',
+            'persian_name': 'نام فارسی',
+            'short_name': 'نام اختصاری انگلیسی',
+            'describe': 'توضیحات',
+            'level': 'مرتبه شغلی',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control text-end'}),
+            'persian_name': forms.TextInput(attrs={'class': 'form-control text-end'}),
+            'short_name': forms.TextInput(attrs={'class': 'form-control text-end'}),
+            'level': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+      

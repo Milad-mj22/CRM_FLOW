@@ -15,7 +15,7 @@ from users.utils.utils import send_push_notification
 from .decorators import job_required
 from users.utils.CalulatedDistance import calculate_distance
 
-from .forms import RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
+from .forms import JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
 from django.views import generic
 from .models import AllowedLocation, CapturedImage, Inventory, InventoryLog, MaterialComposition, Post, RemainingMaterialsUsage,Tools,full_post,Profile
 from django.shortcuts import get_object_or_404
@@ -59,6 +59,7 @@ from .models import RestaurantBranch,NightOrderRemainder
 from django.shortcuts import render, redirect
 from .models import Buyer, InventoryLog
 from .forms import BuyerLoginForm
+from .forms import UserForm, ProfileForm
 
 
 
@@ -297,18 +298,6 @@ def profile(request):
             try:
 
                 user = Profile.objects.get(id = request.user.id)
-
-                # profile_form = {'first_name':None,'last_name':None,'job_persian_name':None,'job_short_name':None,'job_describe':None}
-                # first_name = user.first_name
-                # last_name = user.last_name
-                # user_name = user.user
-                # job_persian_name =  user.job_position.persian_name
-                # job_short_name =  user.job_position.short_name
-                # job_describe =  user.job_position.describe
-
-                # profile_form = {'first_name':first_name,'last_name':last_name,'job_persian_name':job_persian_name,'job_short_name':job_short_name,'job_describe':job_describe}
-
-
 
 
             except Exception as e:
@@ -2407,3 +2396,137 @@ def send_test_notification(request):
         else:
             # خطای دیگر را گزارش بده
             return JsonResponse({'error': str(ex)}, status=500)
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def user_list_view(request):
+    users = User.objects.all()
+    return render(request, 'users/user_list.html', {'users': users})
+
+
+
+
+def create_user_view(request):
+    if request.method == 'POST':
+        user_form = UserForm(request.POST)
+        profile_form = ProfileForm(request.POST, request.FILES)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save(commit=False)
+            if user_form.cleaned_data['password']:
+                user.set_password(user_form.cleaned_data['password'])
+            user.save()
+
+            # بررسی اینکه پروفایل برای این کاربر وجود دارد یا نه
+            profile_qs = Profile.objects.filter(user=user)
+            if profile_qs.exists():
+                profile = profile_qs.first()
+                profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+            else:
+                profile = profile_form.save(commit=False)
+                profile.user = user
+
+            profile_form.save()
+
+            messages.success(request, "کاربر با موفقیت ایجاد شد.")
+            return redirect('user_list')
+        else:
+            messages.error(request, 'لطفا خطاهای فرم را اصلاح کنید.')
+    else:
+        user_form = UserForm()
+        profile_form = ProfileForm()
+
+    return render(request, 'users/create_user.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+    })
+
+
+
+def edit_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    profile = getattr(user, 'profile', None)
+
+    if request.method == 'POST':
+        # user_form = UserForm(request.POST, instance=user)
+        profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+
+        if  profile_form.is_valid():
+
+
+            profile_form.save()
+
+            messages.success(request, "ویرایش کاربر با موفقیت انجام شد.")
+            return redirect('user_list')
+    else:
+
+        profile_form = ProfileForm(instance=profile)
+
+    return render(request, 'users/user_form.html', {
+
+        'profile_form': profile_form,
+        'title': 'ویرایش کاربر',
+    })
+
+
+
+def delete_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    user.delete()
+    messages.success(request, "کاربر حذف شد.")
+    return redirect('user_list')
+
+
+
+
+@login_required
+def job_list_view(request):
+    jobs_qs = jobs.objects.all().order_by('level')
+    return render(request, 'jobs/job_list.html', {'jobs': jobs_qs})
+
+@login_required
+def job_create_view(request):
+    if request.method == 'POST':
+        form = JobForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'شغل با موفقیت ایجاد شد.')
+            return redirect('job_list')
+        
+    else:
+        form = JobForm()
+    return render(request, 'jobs/job_form.html', {'form': form, 'title': 'ایجاد شغل جدید'})
+
+@login_required
+def job_edit_view(request, pk):
+    job = get_object_or_404(jobs, pk=pk)
+    if request.method == 'POST':
+        form = JobForm(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'شغل با موفقیت ویرایش شد.')
+            return redirect('job_list')
+    else:
+        form = JobForm(instance=job)
+    return render(request, 'jobs/job_form.html', {'form': form, 'title': 'ویرایش شغل'})
+
+@login_required
+def job_delete_view(request, pk):
+    job = get_object_or_404(jobs, pk=pk)
+    if request.method == 'POST':
+        job.delete()
+        messages.success(request, 'شغل با موفقیت حذف شد.')
+        return redirect('job_list')
+    return render(request, 'jobs/job_confirm_delete.html', {'job': job})

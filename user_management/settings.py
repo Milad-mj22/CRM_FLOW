@@ -184,7 +184,7 @@ MEDIA_URL = '/media/'
 
 
 # Define the directory where static files will be collected
-# STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
 # settings.py
@@ -192,7 +192,7 @@ MEDIA_URL = '/media/'
 # STATIC_URL = '/static/'
 
 # Ensure that this path is where your static files will be collected
-STATIC_ROOT = r'C:\Users\Administrator\Desktop\Kitchen_Flow\staticfiles'
+# STATIC_ROOT = r'C:\Users\Administrator\Desktop\Kitchen_Flow\staticfiles'
 
 
 LOGIN_REDIRECT_URL = '/'

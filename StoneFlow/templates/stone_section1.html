@@ -371,15 +371,7 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <div class="user-info">
-            <div class="avatar">
-                {{ request.user.username|first|upper }} 
-            </div>
-            <div class="user-details">
-                <p><strong>کاربر:</strong> {{ request.user.username }}</p>
-                <p><strong>سمت:</strong> {{ request.user.profile.job_position.name }}</p>
-            </div>
-        </div>
+
 
 <div class="card p-3 mb-3 text-end" style="direction: rtl;">
   <div class="row g-3">

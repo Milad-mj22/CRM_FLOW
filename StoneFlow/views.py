@@ -190,6 +190,7 @@ from django.db import transaction
 def create_coope(request):
     stepNumber = 1
 
+
     if request.method == 'POST':
         coop_record = None  # در سطح بالا تعریف می‌کنیم که در except هم قابل دسترسی باشد
     # try:
@@ -259,7 +260,8 @@ def create_coope(request):
                 CoopAttributeValue.objects.create(
                     coop=coop_record,
                     attribute=attr,
-                    value=value
+                    value=value,
+                    user  = request.user
                 )
 
         messages.success(request, "مقادیر با موفقیت ثبت شدند.")
@@ -292,7 +294,7 @@ def create_coope(request):
             'can_submit': can_submit,
             'mines': mines,
             'attributes': attributes,  # 👈 ارسال ویژگی‌ها به قالب
-            'steps': steps,
+            # 'steps': steps,
         })
 
 
@@ -445,7 +447,8 @@ def dynamic_step_view(request, url_name, order_id=None):
                         CoopAttributeValue.objects.create(
                             coop=coop_record,
                             attribute=attr,
-                            value=val
+                            value=val,
+                            user  = request.user
                         )
 
                 else:
@@ -470,7 +473,8 @@ def dynamic_step_view(request, url_name, order_id=None):
                         CoopAttributeValue.objects.create(
                             coop=coop_record,
                             attribute=attr,
-                            value=value
+                            value=value,
+                            user  = request.user
                         )
 
 

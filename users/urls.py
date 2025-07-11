@@ -1,12 +1,12 @@
 from django.urls import path
-from .views import buyer_dashboard, buyer_dashboard_view, buyer_login_view, buyer_logout_view, confirm_purchase_view, daily_report_view, error_page, home, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
+from .views import buyer_dashboard, buyer_dashboard_view, buyer_login_view, buyer_logout_view, confirm_purchase_view, create_user_view, daily_report_view, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
         ,my_orders,add_raw_material,post_edit_quil\
         ,create_order,add_mother_material,show_order,snapp,show_restaurant_list,\
         restaurant_food_list,add_restaurant,print_order,foodRawMaterials,addfoodrawmaterial,show_food_material,night_food_order,\
         load_temp,CustomLogoutView,add_store,success_page,\
         show_store,submit_data,show_test,take_store,confrim_take_store,log_view_store,\
         register_entry,register_exit,get_allowed_locations,histoty_entry,update_prices, show_night_order_material,\
-        add_buyer,edit_buyer,buyer_list , subscribe , send_test_notification
+        add_buyer,edit_buyer,buyer_list , subscribe , send_test_notification, user_list_view
 
 from menu.views import set_sold_out
         
@@ -110,6 +110,20 @@ urlpatterns = [
     path('buyers/dashboard_person/', buyer_dashboard_view, name='buyer_dashboard'),
     path('buyers/logout/',buyer_logout_view, name='buyer_logout'),
     path('buyers/confirm/<int:log_id>/', confirm_purchase_view, name='confirm_purchase'),
+
+
+    path('users/admin/create-user/', create_user_view, name='create_user'),
+    path('users/admin/users/', user_list_view, name='user_list'),
+    path('users/admin/edit/<int:user_id>/', edit_user, name='edit_user'),
+    path('users/admin/delete/<int:user_id>/', delete_user, name='delete_user'),
+
+    path('users/admin/jobs/', job_list_view, name='job_list'),
+    path('users/admin/jobs/create/', job_create_view, name='job_create'),
+    path('users/admin/jobs/edit/<int:pk>/', job_edit_view, name='job_edit'),
+    path('users/admin/jobs/delete/<int:pk>/', job_delete_view, name='job_delete'),
+
+
+
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

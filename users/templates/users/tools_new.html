@@ -1,26 +1,83 @@
 {% extends "users/base.html" %}
-{% block title %} Home Page {% endblock title %}
+{% block title %}Home Page{% endblock title %}
 {% block content %}
 {% load static %}
 
+<style>
+  body {
 
-<link rel="stylesheet" type="text/css" href="{% static 'css/tools.css' %}">
+    background: #f9fafb;
+    margin: 0;
+    padding: 2rem 1rem;
+    color: #111827;
+  }
 
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
 
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgb(0 0 0 / 0.07);
+    padding: 0; /* حذف padding برای اینکه بین آیتم‌ها حاشیه‌گذاری درست بشه */
+    overflow: hidden; /* گوشه‌ها رو تیز نشه */
+  }
 
+  /* هر ردیف لینک به صورت بلوک کامل */
+  .item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.25s ease;
+  }
 
+  .item-row:hover {
+    background-color: #f3f4f6; /* رنگ پس‌زمینه هنگام هاور */
+  }
 
-<div class="grid-container">
+  .item-row:last-child {
+    border-bottom: none;
+  }
+
+  .item-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #374151;
+  }
+
+  .item-content {
+    font-size: 1rem;
+    color: #6b7280;
+    max-width: 65%;
+    text-align: right;
+    word-break: break-word;
+  }
+
+  /* هایلایت ردیف خاص */
+  .item-row.snapp {
+    background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+    color: white;
+  }
+  .item-row.snapp .item-content {
+    color: #dbeafe;
+  }
+</style>
+
+<div class="container">
+  <div class="card">
     {% for post in tools %}
-    <a href="{{ post.slug }}" class="{% if post.title == 'Snapp' %}snapp-grid-item-link{% else %}grid-item-link{% endif %}">
-        <div class="{% if post.title == 'Snapp' %}snapp-grid-item{% else %}grid-item{% endif %}">
-            <div class="card-body">
-                <h2 class="card-title">{{ post.title }}</h2>
-                <p class="card-text">{{ post.content|slice:":200" }}</p>
-            </div>
-        </div>
+    <a href="{{ post.slug }}" class="item-row {% if post.title == 'Snapp' %}snapp{% endif %}">
+      <div class="item-title">{{ post.title }}</div>
+      <div class="item-content">{{ post.content|slice:":300" }}{% if post.content|length > 300 %}...{% endif %}</div>
     </a>
     {% endfor %}
+  </div>
 </div>
 
 {% endblock %}
