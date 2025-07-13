@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 import openpyxl
 import win32com.client
 
-from .models import AttributeGroup, CoopAttribute, CoopAttributeValue
+from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, Cutting_factory, CuttingAround, CuttingSaw
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
@@ -33,6 +33,9 @@ from django.http import HttpResponse
 
 import jdatetime
 from datetime import datetime
+import qrcode
+from io import BytesIO
+import base64
 
 
 
@@ -115,6 +118,8 @@ def coops_by_state(request):
     }
     return render(request, 'coop_list.html', context)
 
+
+@login_required
 def coop_detail(request, coop_id):
     coop = get_object_or_404(coops, id=coop_id)
     user_access_qs = StepAccess.objects.filter(user=request.user)
@@ -129,17 +134,31 @@ def coop_detail(request, coop_id):
     values = CoopAttributeValue.objects.filter(coop=coop, attribute__in=short_attributes)
     coop_values[coop.id] = {val.attribute.id: val.value for val in values}
 
-
+    qr_data_url = generate_qr_code(request=request)
 
     return render(request, 'coop_detail.html', {'coop': coop,
                                                 'step_access':step_access,
                                                 'short_attributes': short_attributes,
-                                                'coop_values': coop_values
+                                                'coop_values': coop_values,
+                                                'qr_data_url': qr_data_url,
                                                 })
 
 
 
+def generate_qr_code(request):
+    try:
+        current_url = request.build_absolute_uri()
 
+        # Generate QR code image
+        qr = qrcode.make(current_url)
+        buffer = BytesIO()
+        qr.save(buffer, format="PNG")
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        qr_data_url = f"data:image/png;base64,{qr_base64}"
+    except:
+        return None
+
+    return qr_data_url
 
 
 
@@ -255,6 +274,25 @@ def create_coope(request):
             if attr.required and not value:
                 messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='create_coop_error')
                 raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+
+
+            # ✅ اگر نوع فیلد date بود، تبدیل شمسی به میلادی
+            if attr.field_type == 'date':
+                try:
+                    # انتظار داریم فرمت دریافتی شمسی مثل "1403/04/23" باشد
+                    jalali_parts = value.split('/')
+                    if len(jalali_parts) == 3:
+                        jy, jm, jd = map(int, jalali_parts)
+                        jalali_date = jdatetime.date(jy, jm, jd)
+                        gregorian_date = jalali_date.togregorian()
+                        value = gregorian_date  # نوع: datetime.date
+                except Exception as e:
+                    print(f'Error converting jalali to gregorian for {field_name}: {value} => {e}')
+                    continue  # در صورت خطا، این مقدار را ذخیره نکن
+
+
+
+
 
             if value:
                 CoopAttributeValue.objects.create(
@@ -395,20 +433,6 @@ def dynamic_step_view(request, url_name, order_id=None):
 
             # ثبت ویژگی‌های دینامیک
             attributes = CoopAttribute.objects.filter(step=stepNumber)
-            # for attr in attributes:
-            #     field_name = f'attr_{attr.id}'
-            #     value = request.POST.get(field_name, '').strip()
-
-            #     if attr.required and not value:
-            #         messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
-            #         raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
-
-            #     if value:
-            #         CoopAttributeValue.objects.create(
-            #             coop=coop_record,
-            #             attribute=attr,
-            #             value=value
-            #         )
 
             # ثبت مواد خام
             for field, value in data.items():
@@ -433,7 +457,85 @@ def dynamic_step_view(request, url_name, order_id=None):
             for attr in attributes:
                 field_name = f'attr_{attr.id}'
 
-                if attr.field_type == 'multi_select':
+
+
+
+                # ✳️ بخش ثبت CuttingSaw
+                if attr.field_type == 'CuttingSaw':
+                    lengths = request.POST.getlist('cutting_length[]')
+                    widths = request.POST.getlist('cutting_width[]')
+                    quantities = request.POST.getlist('cutting_quantity[]')
+                    descriptions = request.POST.getlist('cutting_description[]')
+
+                    for i in range(len(lengths)):
+                        try:
+                            length = float(lengths[i])
+                            width = float(widths[i])
+                            quantity = int(quantities[i])
+                            description = descriptions[i]
+
+                            if length > 0 and width > 0 and quantity > 0:
+                                cutting_saw_obj  = CuttingSaw.objects.create(
+                                    coop=coop_record,
+                                    lenght=length,
+                                    width=width,
+                                    quantity=quantity,
+                                    description=description
+                                )
+
+                                CoopAttributeValue.objects.create(
+                                    coop=coop_record,
+                                    attribute=attr,
+                                    value=str(cutting_saw_obj.id),
+                                    user  = request.user
+                                )
+
+
+
+                        except (ValueError, IndexError) as e:
+                            print(f'خطا در ثبت CuttingSaw در ردیف {i}: {e}')
+                    continue  # چون مقدار در مدل دیگر ذخیره شد، ادامه نده
+
+
+
+                # ✳️ بخش ثبت CuttingAround
+                elif attr.field_type == 'CuttingAround':
+                    lengths = request.POST.getlist('cutting_around_length[]')
+                    widths = request.POST.getlist('cutting_around_width[]')
+                    quantities = request.POST.getlist('cutting_around_quantity[]')
+                    serials = request.POST.getlist('cutting_around_serial[]')
+                    descriptions = request.POST.getlist('cutting_around_description[]')
+
+                    for i in range(len(lengths)):
+                        try:
+                            length = float(lengths[i])
+                            width = float(widths[i])
+                            quantity = int(quantities[i])
+                            serial = int(serials[i])
+                            description = descriptions[i]
+
+                            if length > 0 and width > 0 and quantity > 0 and serial > 0:
+                                cutting_around_obj = CuttingAround.objects.create(
+                                    coop=coop_record,
+                                    length=length,
+                                    width=width,
+                                    quantity=quantity,
+                                    serial=serial,
+                                    description=description
+                                )
+
+                                CoopAttributeValue.objects.create(
+                                    coop=coop_record,
+                                    attribute=attr,
+                                    value=str(cutting_around_obj.id),
+                                    user=request.user
+                                )
+
+                        except (ValueError, IndexError) as e:
+                            print(f'خطا در ثبت CuttingAround در ردیف {i}: {e}')
+                    continue  # چون مقدار در مدل دیگر ذخیره شد، ادامه نده
+
+                elif attr.field_type == 'multi_select':
                     values = request.POST.getlist(field_name)
                     if attr.required and not values:
                         messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
@@ -469,6 +571,23 @@ def dynamic_step_view(request, url_name, order_id=None):
                                     continue  # ذخیره نکن
                             except ValueError:
                                 continue  # اگر مقدار نامعتبر بود هم ذخیره نکن
+
+
+
+                        # ✅ اگر نوع فیلد date بود، تبدیل شمسی به میلادی
+                        if attr.field_type == 'date':
+                            try:
+                                # انتظار داریم فرمت دریافتی شمسی مثل "1403/04/23" باشد
+                                jalali_parts = value.split('/')
+                                if len(jalali_parts) == 3:
+                                    jy, jm, jd = map(int, jalali_parts)
+                                    jalali_date = jdatetime.date(jy, jm, jd)
+                                    gregorian_date = jalali_date.togregorian()
+                                    value = gregorian_date  # نوع: datetime.date
+                            except Exception as e:
+                                print(f'Error converting jalali to gregorian for {field_name}: {value} => {e}')
+                                continue  # در صورت خطا، این مقدار را ذخیره نکن
+
 
                         CoopAttributeValue.objects.create(
                             coop=coop_record,
@@ -511,8 +630,10 @@ def dynamic_step_view(request, url_name, order_id=None):
                     attribute_values[val.attribute.id] = val.value
 
             warehouses = Warehouse.objects.all()
+            cutting_factories = Cutting_factory.objects.all()
             materials = raw_material.objects.all()
-
+            cutting_saw_items = CuttingSaw.objects.filter(coop=coop_record)
+            cutting_around_items = CuttingAround.objects.filter(coop=coop_record)
 
             # اینجا می‌تونی بر اساس نوع step اقدام خاصی انجام بدی
             return render(request, 'step_placeholder.html', {
@@ -525,7 +646,10 @@ def dynamic_step_view(request, url_name, order_id=None):
                 'attributes':attributes,
                 'attribute_values': attribute_values,  # 👈 ارسال به قالب
                 'warehouses': warehouses,
+                'cutting_factories':cutting_factories,
                 'materials': materials,
+                'cutting_saw_items': cutting_saw_items,
+                'cutting_around_items': cutting_around_items,
             })
     except Step.DoesNotExist:
         return render(request, 'step_not_found.html', {
@@ -543,7 +667,7 @@ def dynamic_step_view(request, url_name, order_id=None):
 # views.py
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import AttributeGroupForm, CoopAttributeForm, DriverRegisterForm, StepForm
+from .forms import AttributeGroupForm, CoopAttributeForm, CuttingFactoryForm, DriverRegisterForm, StepForm
 
 from users.models import jobs,User,Profile
 from django.db import transaction
@@ -1113,3 +1237,48 @@ def create_english_invoice(request):
         return response
 
     return HttpResponse("Only POST allowed", status=405)
+
+
+
+
+
+
+@login_required
+def cutting_factory_view(request):
+    jobs_qs = Cutting_factory.objects.all()
+    return render(request, 'model_template/list.html', {'jobs': jobs_qs})
+
+@login_required
+def cutting_factory_create_view(request):
+    if request.method == 'POST':
+        form = CuttingFactoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'کارخانه جدید با موفقیت ایجاد شد.')
+            return redirect('cutting_factory_list')
+        
+    else:
+        form = CuttingFactoryForm()
+    return render(request, 'model_template/form.html', {'form': form, 'title': 'ایجاد کارخانه جدید'})
+
+@login_required
+def cutting_factory_edit_view(request, pk):
+    factory = get_object_or_404(Cutting_factory, pk=pk)
+    if request.method == 'POST':
+        form = CuttingFactoryForm(request.POST, instance=factory)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'شغل با موفقیت ویرایش شد.')
+            return redirect('cutting_factory_list')
+    else:
+        form = CuttingFactoryForm(instance=factory)
+    return render(request, 'model_template/form.html', {'form': form, 'title': 'ویرایش کارخانه'})
+
+@login_required
+def cutting_factory_delete_view(request, pk):
+    job = get_object_or_404(Cutting_factory, pk=pk)
+    if request.method == 'POST':
+        job.delete()
+        messages.success(request, 'کارخانه با موفقیت حذف شد.')
+        return redirect('cutting_factory_list')
+    return render(request, 'model_template/confirm_delete.html', {'job': job})

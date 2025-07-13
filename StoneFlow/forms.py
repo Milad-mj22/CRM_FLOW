@@ -1,11 +1,8 @@
 # forms.py
 from django import forms
 from django.contrib.auth.models import User
-from .models import AttributeGroup, Driver, CarModel
+from .models import AttributeGroup, Cutting_factory, Driver, CarModel,Step
 
-from django import forms
-from django.contrib.auth.models import User
-from .models import Driver
 
 
 
@@ -150,11 +147,6 @@ class CoopAttributeForm(forms.ModelForm):
             self.add_error('select_options', 'برای منوی کشویی باید گزینه‌ها را وارد کنید.')
 
 
-
-
-from django import forms
-from .models import Step
-
 class StepForm(forms.ModelForm):
     class Meta:
         model = Step
@@ -185,4 +177,19 @@ class AttributeGroupForm(forms.ModelForm):
         labels = {
             'name': 'نام گزارش',
             'attributes': 'ویژگی‌های انتخابی'
+        }
+    
+
+class CuttingFactoryForm(forms.ModelForm):
+    class Meta:
+        model = Cutting_factory
+        fields = ['name', 'city']
+        labels = {
+            'name': 'نام',
+            'city': 'شهر',
+
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'city': forms.TextInput(attrs={'class': 'form-control'}),
         }

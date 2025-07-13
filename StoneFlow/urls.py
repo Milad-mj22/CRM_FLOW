@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import  create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, delete_driver_view, delete_group, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, register_driver, show_preinvoce_result, steps_list
+from .views import  create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, cutting_factory_create_view, cutting_factory_delete_view, cutting_factory_edit_view, cutting_factory_view, delete_driver_view, delete_group, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, register_driver, show_preinvoce_result, steps_list
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -9,12 +9,10 @@ urlpatterns = [
 
 
     path('create_coope/', create_coope, name='show_flow'),
-    # path('section2/<int:order_id>/', views.section2_view, name='section2'),
 
     path('coops/', coops_by_state, name='coop_list'),
     path('coops/<int:coop_id>/', coop_detail, name='coop_detail'),
     path('dashboard/', coop_dashboard, name='coop_dashboard'),
-    # path('coop/<int:coop_id>/state/<str:state>/', coop_state_detail, name='coop_state_detail'),
 
     path('register/driver/', register_driver, name='register_driver'),
     path('drivers/', driver_list_view, name='driver_list'),
@@ -26,7 +24,6 @@ urlpatterns = [
     path('admin/manage_access/', manage_access, name='manage_access'),
 
     path('<str:url_name>/<int:order_id>/', dynamic_step_view, name='dynamic_step'),
-    # path('<str:url_name>/<int:order_id>/', dynamic_step_view, name='dynamic_step'),
 
 
     # urls.py
@@ -36,8 +33,7 @@ urlpatterns = [
     path('export-group/<int:group_id>/', export_group_excel, name='export_group_excel'),
 
 
-    # path('admin/steps/create/', manage_step, name='create_step'),
-    # path('admin/steps/edit/<int:step_id>/', manage_step, name='edit_step'),
+
 
     path('admin/steps/', steps_list, name='steps_list'),
     path('admin/steps/create/', manage_step, name='create_step'),
@@ -48,15 +44,22 @@ urlpatterns = [
     path('preinvoice/preview/<str:filename>/', show_preinvoce_result, name='preview_preinvoice'),
     path('create-english-invoice/', create_english_invoice, name='create_english_invoice'),
     
-    # path('orders/show_flow/<int:order_id>', show_flow, name='show_flow'),
-
-    # path('section1/<int:order_id>/', section1_view, name='section1_url'),
-    # path('section2/<int:order_id>/', section2_view, name='section2_url'),
-    # path('section3/<int:order_id>/', section3_view, name='section3_url'),
-    # path('section4/<int:order_id>/', section4_view, name='section4_url'),
 
 
-    # path('edit-request/<int:order_id>/<int:step_number>/', edit_request, name='edit_request')
+
+    path('admin/cutting_factory/', cutting_factory_view, name='cutting_factory_list'),
+    path('admin/cutting_factory/create/', cutting_factory_create_view, name='cutting_factory_create'),
+    path('admin/cutting_factory/edit/<int:pk>/', cutting_factory_edit_view, name='cutting_factory_edit'),
+    path('admin/cutting_factory/delete/<int:pk>/', cutting_factory_delete_view, name='cutting_factory_delete'),
+
+
+
+
+
+
+
+
+
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

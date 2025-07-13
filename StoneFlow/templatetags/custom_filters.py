@@ -1,7 +1,8 @@
 from django import template
 
 from StoneFlow.models import Step
-
+from jalali_date import datetime2jalali
+from datetime import date, datetime
 
 
 register = template.Library()
@@ -64,3 +65,18 @@ def get_next_step(steps, current_order):
         return None
     
 
+
+
+@register.filter
+def to_jalali(value):
+    if isinstance(value, str):
+        try:
+            # تلاش برای تبدیل رشته به datetime
+            value = datetime.strptime(value, '%Y-%m-%d')
+        except ValueError:
+            return ''  # اگر فرمت اشتباه بود، برگرد رشته خالی
+
+    if isinstance(value, (datetime, date)):
+        return datetime2jalali(value).strftime('%Y/%m/%d')
+    
+    return ''

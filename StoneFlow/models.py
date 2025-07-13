@@ -85,7 +85,11 @@ class CoopAttribute(models.Model):
         ('image', 'تصویر'),               # ✅ NEW
         ('material', 'ماده اولیه'),       # ✅ NEW
         ('warehouse', 'انبار'),           # ✅ NEW
+        ('Cutting_factory', 'کارخانه برش اره'),           # ✅ NEW
+        ('CuttingSaw', 'موارد برش اره'),           # ✅ NEW
+        ('CuttingAround', 'موارد دور بور شده'),           # ✅ NEW
         ('multi_select', 'چک‌باکس چندتایی'),  # ✅ new
+        ('date', 'تاریخ (شمسی)'),  # ✅ اضافه شد
     )
 
 
@@ -199,3 +203,37 @@ class AttributeGroup(models.Model):
 
 
 
+
+
+class Cutting_factory(models.Model):
+
+    name = models.CharField(max_length=100, unique=True, verbose_name="نام")
+    city = models.CharField(max_length=100, unique=True, verbose_name="شهر")
+    
+    def __str__(self):
+        return self.name
+
+
+
+class CuttingSaw(models.Model):
+
+    coop = models.ForeignKey(coops, on_delete=models.CASCADE, related_name='CuttingSaw_values')
+    length = models.FloatField(verbose_name="طول")
+    width = models.FloatField(verbose_name="عرض")
+    quantity = models.PositiveIntegerField(verbose_name="تعداد")
+    description = models.CharField(max_length=1000, verbose_name="توضیحات", blank=True)
+    def __str__(self):
+        return f"{self.coop.material.name if self.coop.material else '---'} - {self.lenght} {self.width} {self.quantity} "
+
+
+class CuttingAround(models.Model):
+
+    coop = models.ForeignKey(coops, on_delete=models.CASCADE, related_name='CuttingAround_values')
+    length = models.FloatField(verbose_name="طول")
+    width = models.FloatField(verbose_name="عرض")
+    quantity = models.PositiveIntegerField(verbose_name="تعداد")
+    serial = models.PositiveIntegerField(verbose_name="شماره سریال")
+    description = models.CharField(max_length=1000, verbose_name="توضیحات", blank=True)
+
+    def __str__(self):
+        return f"{self.coop.material.name if self.coop.material else '---'} - {self.lenght} {self.width} {self.quantity} "

@@ -6,6 +6,49 @@
 {% block content2 %}
 
 {% load static %}
+
+
+
+<link rel="stylesheet" href="{% static 'css/persian.datepicker.css' %}">
+
+
+<!-- jQuery -->
+
+<!-- Persian Date and Datepicker (Local versions) -->
+
+{% block scripts %}
+<script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+
+<script src="{% static 'js/persian.date.js' %}"></script>
+<script src="{% static 'js/persian.datepicker.js' %}"></script>
+<script>
+  $(document).ready(function () {
+        // روی تمام inputهایی که id با "datepicker_" شروع می‌شه، تقویم اعمال کن
+        $("input[id^='datepicker_']").each(function () {
+            $(this).persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false
+            });
+        });
+
+        // هنگام ارسال فرم، همه تاریخ‌ها را به میلادی تبدیل کن
+        $('form').on('submit', function () {
+            $("input[id^='datepicker_']").each(function () {
+                let jalaliDate = $(this).val();
+                if (jalaliDate) {
+                    let pd = new persianDate(jalaliDate).toGregorian();
+                    let gregorian = `${pd.year}-${String(pd.month).padStart(2, '0')}-${String(pd.day).padStart(2, '0')}`;
+                    $(this).val(gregorian);
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}
+
+
 <style>
     .alert-custom {
         direction: rtl;
@@ -506,7 +549,18 @@
                 {% endif %}
             </label>
 
-            {% if attr.field_type == 'select' %}
+
+            {% if attr.field_type == 'date' %}
+
+                <input type="text"
+                        id="datepicker_{{ attr.id }}"
+                        name="attr_{{ attr.id }}"
+                        class="form-control"
+                        placeholder="تاریخ را انتخاب کنید"
+                        value="{{ value|to_jalali }}">
+
+
+            {% elif attr.field_type == 'select' %}
                 <select class="form-select text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
                         {% if attr.required %}required{% endif %}>
                     <option value="" disabled selected>انتخاب کنید...</option>
@@ -676,3 +730,47 @@ function updateNetWeight() {
 </script>
 
 {% endblock %}
+
+
+
+
+
+
+<script>
+    $(document).ready(function () {
+        $("#datepicker").persianDatepicker({
+            format: 'YYYY/MM/DD',
+            autoClose: true,
+            initialValue: false
+        });
+    });
+
+
+
+</script>
+
+
+<script>
+    $(document).ready(function () {
+        // روی تمام inputهایی که id با "datepicker_" شروع می‌شه، تقویم اعمال کن
+        $("input[id^='datepicker_']").each(function () {
+            $(this).persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false
+            });
+        });
+
+        // هنگام ارسال فرم، همه تاریخ‌ها را به میلادی تبدیل کن
+        $('form').on('submit', function () {
+            $("input[id^='datepicker_']").each(function () {
+                let jalaliDate = $(this).val();
+                if (jalaliDate) {
+                    let pd = new persianDate(jalaliDate).toGregorian();
+                    let gregorian = `${pd.year}-${String(pd.month).padStart(2, '0')}-${String(pd.day).padStart(2, '0')}`;
+                    $(this).val(gregorian);
+                }
+            });
+        });
+    });
+</script>
