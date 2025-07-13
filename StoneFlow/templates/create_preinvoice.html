@@ -72,7 +72,7 @@
             <td>{{ coop.material.name }}</td>
             <td>{{ coop.quantity }}</td>
             <td>
-              <input type="number" step="0.01" name="price_{{ coop.id }}" class="form-control text-center">
+              <input type="number" step="0.01" name="price_{{ coop.id }}" class="form-control text-center" value="{{coop.total_price}}">
             </td>
             <td>
               <input type="number" step="0.01" name="discount_{{ coop.id }}" class="form-control text-center" value="0">

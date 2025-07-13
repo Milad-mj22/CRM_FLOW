@@ -71,8 +71,10 @@
     <div class="col-lg-4">
       <div class="card-custom text-center">
         <img src="{{ user.avatar.url }}" class="avatar-lg mb-3" alt="Avatar">
-        <h5 class="mb-0">{{ user.user.username }}</h5>
+        <h5 class="mb-0"></h5>
         <small class="text-muted">نام کاربری</small>
+        <h5 class="mb-0">{{ user.username }}</h5>
+
         <hr>
         <div class="text-start mt-3">
           {% if user.website %}
@@ -92,10 +94,10 @@
       <div class="card-custom mb-4">
         <h5 class="fw-bold mb-3">اطلاعات فردی</h5>
         <div class="row g-3">
-          <div class="col-6">نام و نام خانوادگی: <strong>{{ user.first_name }} {{ user.last_name }}</strong></div>
-          <div class="col-6">سمت: <strong>{{ user.job_position.persian_name }}</strong></div>
-          <div class="col-6">تلفن: <strong>{{ user.phone }}</strong></div>
-          <div class="col-6">آدرس: <strong>{{ user.address }}</strong></div>
+          <div class="col-6">نام و نام خانوادگی: <strong>{{ user.profile.first_name }} {{ user.profile.last_name }}</strong></div>
+          <div class="col-6">سمت شغل: <strong>{{ user.profile.job_position.persian_name }}</strong></div>
+          <div class="col-6">تلفن: <strong>{{ user.profile.phone }}</strong></div>
+          <div class="col-6">آدرس: <strong>{{ user.profile.address }}</strong></div>
         </div>
       </div>
 

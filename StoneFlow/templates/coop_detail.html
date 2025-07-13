@@ -151,6 +151,9 @@ function printDiv(divId) {
                     <p><strong>مقدار:</strong> {{ coop.quantity }}</p>
                     <p><strong>کاربر ثبت‌کننده:</strong> {{ coop.user.username }}</p>
                     <p><strong>تاریخ ثبت:</strong> {{ coop.submitted_at|date:"Y-m-d H:i" }}</p>
+                    <p><strong>قیمت نهایی کوپ:</strong> {{ coop.total_price }}</p>
+
+
 
                     {% for attr in short_attributes %}
                         {% with val=coop_values|get_item:coop.id|get_item:attr.id %}

@@ -103,6 +103,105 @@
 </script>
 
 
+
+
+
+
+<script>
+
+
+// تابع اضافه کردن جداکننده هزارگان
+function formatPriceWithCommas(value) {
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+
+
+
+function numberToPersianWords(num) {
+    if (num === 0) return 'صفر';
+
+    var ones = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
+    var teens = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
+    var tens = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
+    var hundreds = ['', 'صد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+    var thousands = ['', 'هزار', 'میلیون', 'میلیارد'];
+
+    function threeDigitToWords(n) {
+        var word = '';
+        var h = Math.floor(n / 100);
+        var t = Math.floor((n % 100) / 10);
+        var o = n % 10;
+
+        if (h > 0) {
+            word += hundreds[h];
+        }
+        if (t === 1) {
+            if (word !== '') word += ' و ';
+            word += teens[o];
+        } else {
+            if (t > 1) {
+                if (word !== '') word += ' و ';
+                word += tens[t];
+            }
+            if (o > 0) {
+                if (word !== '') word += ' و ';
+                word += ones[o];
+            }
+        }
+        return word;
+    }
+
+    var parts = [];
+    var i = 0;
+
+    while (num > 0) {
+        var threeDigits = num % 1000;
+        if (threeDigits !== 0) {
+            var segment = threeDigitToWords(threeDigits);
+            if (thousands[i] !== '') {
+                segment += ' ' + thousands[i];
+            }
+            parts.push(segment);
+        }
+        num = Math.floor(num / 1000);
+        i++;
+    }
+
+    return parts.reverse().join(' و ');
+}
+
+
+document.querySelectorAll('.price-field').forEach(function(input) {
+    input.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/,/g, '').replace(/[^\d]/g, '');
+
+        if (value === '') {
+            document.getElementById('price_text_' + e.target.id.split('_')[1]).textContent = '';
+            e.target.value = '';
+            return;
+        }
+
+        let intValue = parseInt(value);
+        if (isNaN(intValue)) intValue = 0;
+
+        e.target.value = formatPriceWithCommas(intValue);
+
+        // نمایش معادل حروف
+        let persianWords = numberToPersianWords(intValue);
+        document.getElementById('price_text_' + e.target.id.split('_')[1]).textContent = persianWords + ' تومان';
+    });
+});
+
+
+
+</script>
+
+
+
+
+
+
 {% endblock %}
 
 <style>
@@ -180,15 +279,6 @@
   
 
 </style>
-
-<!-- <div class="text-center mt-5" style="direction: rtl;">
-  <h3 class="mb-4">🧩 مرحله {{ step.order }}: {{ step.title }}</h3>
-  <p>محتوای این مرحله هنوز طراحی نشده است.</p>
-</div>
-
- -->
-
-
 
 
 
@@ -405,9 +495,13 @@
                     <input type="hidden" name="attr_{{ attr.id }}" value="cutting_around_added">
                                 
 
+                {% elif attr.field_type == 'price' %}
 
 
+                <input type="text" id="attr_{{ attr.id }}" name="attr_{{ attr.id }}" class="form-control price-field" autocomplete="off"  value="{{ value }}" >
 
+                <!-- نمایش قیمت به حروف -->
+                <div id="price_text_{{ attr.id }}" class="text-muted mt-1" style="direction: rtl; text-align: right;"></div>
 
 
 

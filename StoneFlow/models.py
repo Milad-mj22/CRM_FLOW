@@ -90,6 +90,7 @@ class CoopAttribute(models.Model):
         ('CuttingAround', 'موارد دور بور شده'),           # ✅ NEW
         ('multi_select', 'چک‌باکس چندتایی'),  # ✅ new
         ('date', 'تاریخ (شمسی)'),  # ✅ اضافه شد
+        ('price', 'قیمت'),  # ✅ اضافه شد
     )
 
 
@@ -237,3 +238,12 @@ class CuttingAround(models.Model):
 
     def __str__(self):
         return f"{self.coop.material.name if self.coop.material else '---'} - {self.lenght} {self.width} {self.quantity} "
+
+
+
+class PriceAttribute(models.Model):
+    attribute = models.OneToOneField(CoopAttribute, on_delete=models.CASCADE, related_name='price_attr')
+    multiplier = models.DecimalField(max_digits=10, decimal_places=2, default=1.0, verbose_name="ضریب")
+
+    def __str__(self):
+        return f"{self.attribute.label} (ضریب: {self.multiplier})"

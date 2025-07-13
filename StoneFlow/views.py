@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 import openpyxl
 import win32com.client
 
-from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, Cutting_factory, CuttingAround, CuttingSaw
+from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, Cutting_factory, CuttingAround, CuttingSaw, PriceAttribute
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
@@ -125,8 +125,8 @@ def coop_detail(request, coop_id):
     user_access_qs = StepAccess.objects.filter(user=request.user)
     step_access = {access.step.id: access.access_level for access in user_access_qs}
 
-
-
+    totalPrice = calculate_total_price(coop=coop)
+    coop.total_price = totalPrice
     short_card_group = AttributeGroup.objects.get(name='short_card')
     short_attributes = short_card_group.attributes.all()
 
@@ -1127,6 +1127,10 @@ def create_preinvoice_view(request):
 
     else:
         coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
+
+        for coop in coops_final:
+            coop.total_price =  calculate_total_price(coop=coop)
+
         customers = Buyer.objects.all()
 
         return render(request, 'create_preinvoice.html', {
@@ -1282,3 +1286,60 @@ def cutting_factory_delete_view(request, pk):
         messages.success(request, 'کارخانه با موفقیت حذف شد.')
         return redirect('cutting_factory_list')
     return render(request, 'model_template/confirm_delete.html', {'job': job})
+
+
+
+
+def calculate_total_price(coop):
+    total = Decimal(0)
+    # Get all price attributes with multipliers
+    price_attrs = PriceAttribute.objects.select_related('attribute').all()
+
+    for price_attr in price_attrs:
+        attr = price_attr.attribute
+        # Get the CoopAttributeValue for this coop and attribute
+        try:
+            attr_value_obj = CoopAttributeValue.objects.get(coop=coop, attribute=attr)
+            number = float(attr_value_obj.value.replace(',', ''))
+            attr_value = Decimal(number)
+            total += attr_value * price_attr.multiplier
+        except CoopAttributeValue.DoesNotExist:
+            continue  # Attribute value not set for this coop, skip
+
+    total =  f"{total:,.0f}"  # بدون رقم اعشار، جداکننده هزارگان کاما
+    return total
+
+
+
+
+def price_attribute_list(request):
+    # گرفتن تمام CoopAttribute های نوع 'price'
+    price_attrs = CoopAttribute.objects.filter(field_type='price').order_by('label')
+
+    # اطمینان از وجود PriceAttribute برای همه‌ی اینها، در صورت نبود بساز
+    for attr in price_attrs:
+        PriceAttribute.objects.get_or_create(attribute=attr)
+
+    # گرفتن PriceAttributeهای مربوطه
+    price_attrs_with_multiplier = PriceAttribute.objects.filter(attribute__in=price_attrs).select_related('attribute')
+
+    if request.method == 'POST':
+        # پردازش فرم
+        for pa in price_attrs_with_multiplier:
+            key = f'multiplier_{pa.attribute.id}'
+            multiplier_str = request.POST.get(key)
+            if multiplier_str:
+                try:
+                    pa.multiplier = float(multiplier_str)
+                    pa.save()
+                except ValueError:
+                    messages.error(request, f'ضریب برای "{pa.attribute.label}" عدد معتبر نیست.')
+                    return redirect('price_attribute_list')
+
+        messages.success(request, 'ضریب‌ها با موفقیت ذخیره شدند.')
+        return redirect('price_attribute_list')
+
+    context = {
+        'price_attrs': price_attrs_with_multiplier,
+    }
+    return render(request, 'price/price_attribute_list.html', context)
