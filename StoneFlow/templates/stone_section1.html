@@ -445,42 +445,6 @@
 
 
 
-<!-- 
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <thead class="table-dark">
-                    <tr>
-                        <th>نام سنگ</th>
-                        <th>واحد</th>
-                        <th>وزن</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for usage in material_usages %}
-                    <tr>
-                        <td>
-                            {% if usage.image %}
-                                <img src="{{ usage.image.url }}" alt="{{ usage.name }}" style="width: 56px; height: 56px; object-fit: cover; border-radius: 4px; margin-left: 5px;">
-                            {% endif %}
-                            {{ usage.name }}
-                        </td>
-                        <td>{{ usage.unit }}</td>
-                        {% if not is_confirmed %}
-                        <td>
-                            <input type="number" name="materials_sent[]" value="{{ usage.1.quantity_used|floatformat:"-4" }}" class="text-center" step="any">
-                            <input type="hidden" name="materials_names[]" value="{{ usage.name }}">
-                        </td>
-                        {% else %}
-                        <td>{{ usage.1.step1_quantity|floatformat:"-4" }}</td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div> -->
-
-
-
         <!-- Materials -->
         <div>
            {% for mother_material in mother_materials %}
@@ -557,7 +521,8 @@
                         name="attr_{{ attr.id }}"
                         class="form-control"
                         placeholder="تاریخ را انتخاب کنید"
-                        value="{{ value|to_jalali }}">
+                        value="{{ value|to_jalali }}"
+                        {% if attr.required %}required{% endif %}>
 
 
             {% elif attr.field_type == 'select' %}
@@ -573,55 +538,14 @@
 
             {% elif attr.field_type == 'int' or attr.field_type == 'float' %}
                 <input type="number" class="form-control text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
-                       step="any" value="{{ attr.default_value }}" {% if attr.required %}required{% endif %}>
+                       step="any" value="{{ attr.value }}" {% if attr.required %}required{% endif %}>
             {% else %}
                 <input type="text" class="form-control text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
-                       value="{{ attr.default_value }}" {% if attr.required %}required{% endif %}>
+                       value="{{ attr.value }}" {% if attr.required %}required{% endif %}>
             {% endif %}
         </div>
     {% endfor %}
 </div>
-
-
-<!-- 
-
-        <div class="row mb-3">
-        <div class="col-md-4">
-            <label for="full_weight" class="form-label">وزن پر (کیلوگرم)</label>
-            <input type="number" class="form-control" name="full_weight" id="full_weight" required step="any"value="{{ full_weight }}">
-        </div>
-        <div class="col-md-4">
-            <label for="empty_weight" class="form-label">وزن خالی (کیلوگرم)</label>
-            <input type="number" class="form-control" name="empty_weight" id="empty_weight" required step="any"value="{{ empty_weight|default:'0' }}">
-        </div>
-        <div class="col-md-4">
-            <label for="net_weight" class="form-label">وزن خالص (کیلوگرم)</label>
-            <input type="number" class="form-control" name="net_weight" id="net_weight" required step="any" value="{{ net_weight|default:'0' }}">
-        </div>
-        </div>
-
-        <div class="row mb-3">
-        <div class="col-md-4">
-            <label for="net_weight" class="form-label">قیمت کل (تومان)</label>
-            <input type="number" class="form-control" name="total_mine_price" id="total_mine_price" required step="any",value="0"value="{{ total_mine_price }}">
-        </div>
-        <div class="col-md-4">
-            <label for="full_weight" class="form-label">حق توزین (تومان)</label>
-            <input type="number" class="form-control" name="right_weigh" id="right_weigh" required step="any",value="0"value="{{ right_weigh|default:'0' }}">
-        </div>
-        <div class="col-md-4">
-            <label for="empty_weight" class="form-label">ارزش افزوده (تومان)</label>
-            <input type="number" class="form-control" name="added_value" id="added_value" required step="any",value="0"value="{{ added_value|default:'0' }}">
-        </div>
-        <div class="col-md-4">
-            <label for="net_weight" class="form-label">انعام (تومان)</label>
-            <input type="number" class="form-control" name="tip" id="tip" required step="any",value="0"value="{{ tip|default:'0' }}">
-        </div>
-
-        </div>
-
-         -->
-
 
 
 

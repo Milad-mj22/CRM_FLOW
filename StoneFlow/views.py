@@ -556,9 +556,15 @@ def dynamic_step_view(request, url_name, order_id=None):
                 else:
                     value = request.POST.get(field_name, '').strip()
 
+
+                    if attr.field_type == 'image':
+                        value = request.FILES.get(field_name)
+
                     if attr.required and not value:
-                        messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
-                        raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+                        if attr.field_type !='bool':
+                            messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
+                            raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+                        
                    
                     CoopAttributeValue.objects.filter(coop=coop_record, attribute=attr).delete()
 
@@ -1300,9 +1306,12 @@ def calculate_total_price(coop):
         # Get the CoopAttributeValue for this coop and attribute
         try:
             attr_value_obj = CoopAttributeValue.objects.get(coop=coop, attribute=attr)
-            number = float(attr_value_obj.value.replace(',', ''))
-            attr_value = Decimal(number)
-            total += attr_value * price_attr.multiplier
+            if attr_value_obj.value is not None:
+                if attr_value_obj.value !='None':
+
+                    number = float(attr_value_obj.value.replace(',', ''))
+                    attr_value = Decimal(number)
+                    total += attr_value * price_attr.multiplier
         except CoopAttributeValue.DoesNotExist:
             continue  # Attribute value not set for this coop, skip
 
