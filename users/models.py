@@ -517,6 +517,24 @@ class Nationality(models.Model):
         return self.name
 
 
+
+class Nationality(models.Model):
+    name = models.CharField(max_length=100, verbose_name='نام ملیت')
+
+    def __str__(self):
+        return self.name
+
+
+
+class IntroductionMethod(models.Model):
+    title = models.CharField(max_length=100, verbose_name="عنوان نحوه آشنایی")
+
+    def __str__(self):
+        return self.title
+
+
+
+
 class Buyer(models.Model):
 
     GENDER_CHOICES = [
@@ -536,12 +554,24 @@ class Buyer(models.Model):
     )
 
     phone_number = models.CharField(max_length=20, verbose_name='شماره تماس')
+
+    introduction_method = models.ForeignKey(
+        IntroductionMethod,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="نحوه آشنایی"
+    )
+
     nationality = models.ForeignKey(Nationality, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='ملیت')
     national_code = models.CharField(max_length=10, verbose_name='کد ملی')
     province = models.CharField(max_length=50, verbose_name='استان', blank=True, null=True)
     city = models.CharField(max_length=50, verbose_name='شهر', blank=True, null=True)
     nation = models.CharField(max_length=50, verbose_name='شهر', blank=True, null=True)
     address = models.TextField(verbose_name='آدرس', blank=True, null=True)
+
+
+
     details = models.TextField(verbose_name='توضیحات تکمیلی', blank=True, null=True)
 
     created_date = models.DateTimeField(default=timezone.now,null=True,blank=True)
@@ -550,6 +580,43 @@ class Buyer(models.Model):
 
     def __str__(self):
         return f"{self.first_name} - {self.last_name}"
+
+
+
+class BuyerAttribute(models.Model):
+    FIELD_TYPES = [
+        ('text', 'متن'),
+        ('number', 'عدد'),
+        ('date', 'تاریخ'),
+        ('price', 'قیمت'),
+        ('image', 'تصویر'),
+    ]
+
+    label = models.CharField(max_length=255, verbose_name='عنوان ویژگی')
+    field_type = models.CharField(max_length=20, choices=FIELD_TYPES, verbose_name='نوع فیلد')
+    required = models.BooleanField(default=False, verbose_name='ضروری است')
+
+    def __str__(self):
+        return self.label
+    
+
+class BuyerAttributeValue(models.Model):
+    buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE, related_name='attributes')
+    attribute = models.ForeignKey(BuyerAttribute, on_delete=models.CASCADE)
+    value = models.TextField(blank=True, null=True, verbose_name='مقدار ویژگی')
+    image = models.ImageField(upload_to='buyer_attrs/', blank=True, null=True, verbose_name='تصویر')
+
+    def get_display_value(self):
+        if self.attribute.field_type == 'image':
+            return self.image.url if self.image else ''
+        return self.value
+
+    def __str__(self):
+        return f"{self.buyer} - {self.attribute.label}"
+
+
+
+
 
 
 

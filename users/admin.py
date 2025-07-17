@@ -142,17 +142,6 @@ admin.site.register(EntryExitLog)
 
 
 
-
-
-# class LocationAdmin(admin.ModelAdmin):
-#     form = LocationForm
-#     list_display = ['name', 'latitude', 'longitude','radius_meters']
-
-#     # Display a map in the admin panel for user interaction
-#     def get_form(self, request, obj=None, **kwargs):
-#         form = super(LocationAdmin, self).get_form(request, obj, **kwargs)
-#         return form
-
 admin.site.register(Location)
 
 

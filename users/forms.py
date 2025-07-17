@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.forms.renderers import BaseRenderer
 from django.forms.utils import ErrorList
-from .models import Location, Profile,Post_quill,jobs,SnappFoodList,cities,EntryExitLog
+from .models import BuyerAttribute, Location, Profile,Post_quill,jobs,SnappFoodList,cities,EntryExitLog
 from django import forms
 from .models import QuillPost , full_post , raw_material , mother_material
 from django import forms
@@ -335,7 +335,7 @@ from .models import Buyer
 class BuyerForm(forms.ModelForm):
     class Meta:
         model = Buyer
-        fields = ['first_name', 'last_name', 'gender', 'phone_number', 'national_code',
+        fields = ['first_name', 'last_name', 'gender', 'phone_number', 'national_code','introduction_method',
                   'province', 'city', 'address', 'details', 'nationality']
         labels = {
             'first_name': 'نام ',
@@ -343,6 +343,7 @@ class BuyerForm(forms.ModelForm):
             'gender': 'جنسیت',
             'phone_number': 'شماره تماس',
             'national_code': 'کد ملی',
+            'introduction_method': 'نحوه آشنایی',
             'province': 'استان',
             'city': 'شهر',
             'address': 'آدرس',
@@ -365,6 +366,10 @@ class BuyerLoginForm(forms.Form):
     phone = forms.CharField(label="شماره تلفن", max_length=20)
 
 
+class BuyerAttributeForm(forms.ModelForm):
+    class Meta:
+        model = BuyerAttribute
+        fields = ['label', 'field_type', 'required']
 
 
 

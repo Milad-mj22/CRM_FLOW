@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import buyer_dashboard, buyer_dashboard_view, buyer_login_view, buyer_logout_view, confirm_purchase_view, create_user_view, daily_report_view, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
+from .views import buyer_attr_manage, buyer_dashboard, buyer_dashboard_view, buyer_login_view, buyer_logout_view, confirm_purchase_view, create_user_view, daily_report_view, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
         ,my_orders,add_raw_material,post_edit_quil\
         ,create_order,add_mother_material,show_order,snapp,show_restaurant_list,\
         restaurant_food_list,add_restaurant,print_order,foodRawMaterials,addfoodrawmaterial,show_food_material,night_food_order,\
@@ -123,6 +123,9 @@ urlpatterns = [
     path('users/admin/jobs/delete/<int:pk>/', job_delete_view, name='job_delete'),
 
 
+
+    path('buyer-attributes/admin/', buyer_attr_manage, name='buyer_attr_manage'),
+    path('buyer-attributes/admin/delete/<int:attr_id>/', delete_buyer_attribute, name='delete_buyer_attribute'),
 
 
 

@@ -15,9 +15,9 @@ from users.utils.utils import send_push_notification
 from .decorators import job_required
 from users.utils.CalulatedDistance import calculate_distance
 
-from .forms import JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
+from .forms import BuyerAttributeForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
 from django.views import generic
-from .models import AllowedLocation, CapturedImage, Inventory, InventoryLog, MaterialComposition, Post, RemainingMaterialsUsage,Tools,full_post,Profile
+from .models import AllowedLocation, BuyerAttribute, BuyerAttributeValue, CapturedImage, Inventory, InventoryLog, MaterialComposition, Post, RemainingMaterialsUsage,Tools,full_post,Profile
 from django.shortcuts import get_object_or_404
 import numpy as np
 from django.http import HttpResponse
@@ -2134,23 +2134,90 @@ from .forms import BuyerForm
 def add_buyer(request):
     if request.method == 'POST':
         form = BuyerForm(request.POST)
+        buyer_attributes = BuyerAttribute.objects.all()
+
         if form.is_valid():
-            form.save()
+            buyer = form.save()
+            for attr in buyer_attributes:
+                field_name = f"attr_{attr.id}"
+
+                if attr.field_type == 'image':
+                    uploaded_image = request.FILES.get(field_name)
+                    if uploaded_image:
+                        BuyerAttributeValue.objects.update_or_create(
+                            buyer=buyer,
+                            attribute=attr,
+                            defaults={'image': uploaded_image, 'value': None}
+                        )
+                else:
+                    value = request.POST.get(field_name, '').strip()
+                    BuyerAttributeValue.objects.update_or_create(
+                        buyer=buyer,
+                        attribute=attr,
+                        defaults={'value': value, 'image': None}
+                    )
+            
+        
             return redirect('buyer_list')  # change to your desired success URL
+            
+    
+    
+    
+    
+    
+
+    
+    
+    
     else:
         form = BuyerForm()
-    return render(request, 'Buyer/buyer_form.html', {'form': form, 'title': 'افزودن خریدار'})
+        buyer_attributes = BuyerAttribute.objects.all()
+
+
+
+    return render(request, 'Buyer/buyer_form.html', {'form': form, 'title': 'افزودن خریدار','buyer_attributes':buyer_attributes})
+
+
+
+
 
 def edit_buyer(request, pk):
     buyer = get_object_or_404(Buyer, pk=pk)
     if request.method == 'POST':
         form = BuyerForm(request.POST, instance=buyer)
+        buyer_attributes = BuyerAttribute.objects.all()
+
         if form.is_valid():
-            form.save()
+            buyer = form.save()
+            for attr in buyer_attributes:
+                field_name = f"attr_{attr.id}"
+
+                if attr.field_type == 'image':
+                    uploaded_image = request.FILES.get(field_name)
+                    if uploaded_image:
+                        BuyerAttributeValue.objects.update_or_create(
+                            buyer=buyer,
+                            attribute=attr,
+                            defaults={'image': uploaded_image, 'value': None}
+                        )
+                else:
+                    value = request.POST.get(field_name, '').strip()
+                    BuyerAttributeValue.objects.update_or_create(
+                        buyer=buyer,
+                        attribute=attr,
+                        defaults={'value': value, 'image': None}
+                    )
             return redirect('buyer_list')
     else:
         form = BuyerForm(instance=buyer)
-    return render(request, 'Buyer/buyer_form.html', {'form': form, 'title': 'ویرایش خریدار'})
+        buyer_attrs = BuyerAttributeValue.objects.filter(buyer=pk)
+
+        # list_buyer_attrs = []
+
+        # for attr in buyer_attrs:
+        #     list_buyer_attrs.append(attr)
+
+    return render(request, 'Buyer/buyer_edit.html', {'form': form, 'title': 'ویرایش خریدار','buyer_attributes':buyer_attrs})
 
 
 def buyer_list(request):
@@ -2284,6 +2351,50 @@ def confirm_purchase_view(request, log_id):
 
     messages.success(request, 'خرید با موفقیت تایید شد.')
     return redirect('buyer_dashboard')
+
+
+
+
+
+
+
+
+def buyer_attr_manage(request):
+    if request.method == 'POST':
+        if 'attr_id' in request.POST:
+            # Editing an existing attribute
+            attr = get_object_or_404(BuyerAttribute, id=request.POST['attr_id'])
+            form = BuyerAttributeForm(request.POST, instance=attr)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'ویژگی با موفقیت به‌روزرسانی شد.')
+                return redirect('buyer_attr_manage')
+        else:
+            # Adding a new attribute
+            form = BuyerAttributeForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'ویژگی جدید با موفقیت اضافه شد.')
+                return redirect('buyer_attr_manage')
+    else:
+        form = BuyerAttributeForm()
+
+    attributes = BuyerAttribute.objects.all()
+    return render(request, 'Buyer/buyer_attr_manager.html', {'form': form, 'attributes': attributes})
+
+
+def delete_buyer_attribute(request, attr_id):
+    attr = get_object_or_404(BuyerAttribute, id=attr_id)
+    attr.delete()
+    messages.success(request, 'ویژگی حذف شد.')
+    return redirect('buyer_attr_manage')
+
+
+
+
+
+
+
 
 
 

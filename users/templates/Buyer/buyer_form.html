@@ -3,6 +3,7 @@
 {% block title %}{{ title }}{% endblock title %}
 {% block content %}
 {% load widget_tweaks %}
+{% load custom_filters %}
 
 <link rel="stylesheet" href="{% static 'css/store.css' %}">
 <style>
@@ -79,6 +80,39 @@
                                 {% endif %}
                             </div>
                         {% endfor %}
+
+                        {% for attr in buyer_attributes %}
+                                <label for="attr_{{ attr.id }}" class="form-label text-end d-block fw-bold">
+                                    {{ attr.label }}
+                                    {% if attr.required %}
+                                        <span class="text-danger">*</span>
+                                    {% endif %}
+                                </label>
+                                {% if attr.field_type == 'image' %}
+                                <input type="file" name="attr_{{ attr.id }}">
+                                {% if value %}
+                                    <img src="{{ value }}" height="80">
+                                {% endif %}
+
+                                    
+                                {% elif attr.field_type == 'int' or attr.field_type == 'float' %}
+                                    <input type="number" class="form-control text-end"
+                                        name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
+                                        step="any" value="{{ value }}" {% if attr.required %}required{% endif %}>
+                                {% elif attr.field_type == 'bool' %}
+                                    <div class="form-check text-end">
+                                        <input type="checkbox" class="form-check-input" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}" {% if value == 'on' %}checked{% endif %}>
+                                        <label class="form-check-label" for="attr_{{ attr.id }}">تأیید</label>
+                                    </div>
+                                {% else %}
+                                    <input type="text" class="form-control text-end" name="attr_{{ attr.id }}" value="{{ attr.value }}"  {% if attr.required %}required{% endif %}>
+                                {% endif %}
+                        {% endfor %}
+
+                        <hr>
+                        
+
+
 
                         <div class="d-flex flex-wrap justify-content-between">
                             <button type="submit" class="btn btn-success">ثبت اطلاعات</button>
