@@ -127,6 +127,7 @@ class coops(models.Model):
 
     image = models.ImageField(upload_to='mining_remittance/', blank=True, null=True)  # Added field for image
 
+    is_active = models.BooleanField(default=True)
 
     # فقط برای نگهداری موقتی کاربر تغییر دهنده
     _changed_by = None
@@ -156,6 +157,30 @@ class coops(models.Model):
                 new_state=self.state,
                 changed_by=self._changed_by
             )
+
+
+
+
+
+
+
+
+
+class CoopDeleteRequest(models.Model):
+    coop = models.ForeignKey('coops', on_delete=models.CASCADE, related_name='delete_requests')
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delete_requests')
+    requested_at = models.DateTimeField(default=timezone.now)
+    approved = models.BooleanField(null=True, blank=True)  # None = pending, True = approved, False = rejected
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_delete_requests')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    comment = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Delete Request for Coop #{self.coop.id} by {self.requested_by.username}"
+
+
+
+
 
 
 class CoopAttributeValue(models.Model):

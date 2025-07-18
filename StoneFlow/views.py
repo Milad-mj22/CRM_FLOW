@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 import openpyxl
 import win32com.client
 
-from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, Cutting_factory, CuttingAround, CuttingSaw, PriceAttribute
+from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, CoopDeleteRequest, Cutting_factory, CuttingAround, CuttingSaw, PriceAttribute
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
@@ -32,10 +32,11 @@ from openpyxl import Workbook
 from django.http import HttpResponse
 
 import jdatetime
-from datetime import datetime
+from datetime import datetime, timezone
 import qrcode
 from io import BytesIO
 import base64
+from django.contrib.auth.decorators import user_passes_test
 
 
 
@@ -93,7 +94,7 @@ def coops_by_state(request):
     selected_material_id = request.GET.get('material')
     page = int(request.GET.get('page', 1))
 
-    coop_list = coops.objects.all().order_by('-id')
+    coop_list = coops.objects.filter(is_active=True).order_by('-id')
     steps = Step.objects.order_by('order')  # مرتب‌سازی مراحل
     materials = raw_material.objects.all()
 
@@ -1026,6 +1027,17 @@ def convert_excel_to_pdf(excel_path, pdf_path):
         pythoncom.CoUninitialize()
 
 
+def convert_str_price2float(price:str):
+
+        if price is not None:
+            if price !='None':
+
+                price = float(price.replace(',', ''))
+                return price
+        
+        return 0
+
+
 @login_required
 def create_preinvoice_view(request):
     if request.method == 'POST':
@@ -1080,10 +1092,11 @@ def create_preinvoice_view(request):
         for iter,coop in enumerate(selected_coops):
             material_name = coop.material.name
             quantity = coop.quantity
-            try:
-                price = float(request.POST.get(f'price_{coop.id}', '0'))
-            except:
-                price = 0
+            # try:
+            price = (request.POST.get(f'price_{coop.id}', '0'))
+            price = convert_str_price2float(price=price)
+            # except:
+            #     price = 0
             discount = float(request.POST.get(f'discount_{coop.id}', '0'))
             total = quantity * price * (100 - discount) / 100
 
@@ -1136,6 +1149,26 @@ def create_preinvoice_view(request):
 
         for coop in coops_final:
             coop.total_price =  calculate_total_price(coop=coop)
+            try:
+                sell_price = coop.attribute_values.filter(attribute__label="قیمت فروش").first()
+            
+                # print(coop.sell)
+                if sell_price is not None:
+                    if sell_price.value !='None':
+                        sell_price = sell_price.value
+                        sell_price = (sell_price.replace(':', ''))
+                        sell_price = (sell_price.replace(' ', ''))
+                        # sell_price = Decimal(number)
+                    else:
+                        sell_price =0 
+                else:
+                    sell_price = 0
+
+            except:
+                sell_price = 0
+
+
+            coop.sell_price = sell_price
 
         customers = Buyer.objects.all()
 
@@ -1178,6 +1211,10 @@ def create_english_invoice(request):
         # Load template
 
 
+
+        template_path = 'media/templates/en_preinvoice_template.xlsx'
+
+        today_gregorian = today_gregorian.strftime('%Y/%m/%d')
 
 
         wb = openpyxl.load_workbook(template_path)
@@ -1352,3 +1389,75 @@ def price_attribute_list(request):
         'price_attrs': price_attrs_with_multiplier,
     }
     return render(request, 'price/price_attribute_list.html', context)
+
+
+from django.core.exceptions import PermissionDenied
+
+def is_level_one(user):
+    return hasattr(user, 'profile') and user.profile.job_position.level <= 1
+
+
+
+@login_required
+def request_delete_coop(request, coop_id):
+    coop = get_object_or_404(coops, id=coop_id, is_active=True)
+
+    # Prevent duplicates
+    if CoopDeleteRequest.objects.filter(coop=coop, approved=None).exists():
+        messages.warning(request, "درخواست حذف برای این بار قبلاً ثبت شده است.")
+        return redirect('coop_list')
+
+    CoopDeleteRequest.objects.create(
+        coop=coop,
+        requested_by=request.user
+    )
+    messages.success(request, "درخواست حذف ثبت شد و در انتظار تأیید مدیر است.")
+    return redirect('coop_list')
+
+@login_required
+@user_passes_test(is_level_one)
+def review_delete_requests(request):
+    requests = CoopDeleteRequest.objects.filter(approved=None).select_related('coop', 'requested_by')
+    return render(request, 'delete_requests.html', {'requests': requests})
+
+
+
+@login_required
+@user_passes_test(is_level_one)
+def approve_delete_request(request, coop_id):
+    from django.utils import timezone
+
+    delete_request = get_object_or_404(CoopDeleteRequest, id=coop_id, approved=None)
+    delete_request.approved = True
+    delete_request.reviewed_by = request.user
+    delete_request.reviewed_at = timezone.now()
+    delete_request.save()
+
+    # Soft delete the coop
+    coop = delete_request.coop
+    coop.is_active = False
+    coop.set_changed_by(request.user)
+    coop.save()
+
+    messages.success(request, f"بار #{coop.id} حذف شد.")
+    return redirect('review_delete_requests')
+
+
+
+@login_required
+@user_passes_test(is_level_one)
+def reject_delete_request(request, coop_id):
+    from django.utils import timezone
+
+    delete_request = get_object_or_404(CoopDeleteRequest, id=coop_id, approved=None)
+    delete_request.approved = False
+    delete_request.reviewed_by = request.user
+    delete_request.reviewed_at = timezone.now()
+    delete_request.comment = request.POST.get("comment", "")
+    delete_request.save()
+
+    messages.info(request, "درخواست حذف رد شد.")
+    return redirect('review_delete_requests')
+
+
+

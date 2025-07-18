@@ -1,7 +1,7 @@
 from django.urls import path
 
 
-from .views import  create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, cutting_factory_create_view, cutting_factory_delete_view, cutting_factory_edit_view, cutting_factory_view, delete_driver_view, delete_group, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, price_attribute_list, register_driver, show_preinvoce_result, steps_list
+from .views import  approve_delete_request, create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, cutting_factory_create_view, cutting_factory_delete_view, cutting_factory_edit_view, cutting_factory_view, delete_driver_view, delete_group, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, price_attribute_list, register_driver, reject_delete_request, request_delete_coop, review_delete_requests, show_preinvoce_result, steps_list
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -13,6 +13,13 @@ urlpatterns = [
 
     path('coops/', coops_by_state, name='coop_list'),
     path('coops/<int:coop_id>/', coop_detail, name='coop_detail'),
+    path('coops/approve_delete/<int:coop_id>/', approve_delete_request, name='approve_delete_request'),
+    path('coops/reject_delete/<int:coop_id>/', reject_delete_request, name='reject_delete_request'),
+    path('coops/review_delete/', review_delete_requests, name='review_delete_requests'),
+    path('coops/request_delete_coop/<int:coop_id>/', request_delete_coop, name='request_delete_coop'),
+    
+    
+    
     path('dashboard/', coop_dashboard, name='coop_dashboard'),
 
     path('register/driver/', register_driver, name='register_driver'),

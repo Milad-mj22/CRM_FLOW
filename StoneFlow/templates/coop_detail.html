@@ -207,6 +207,10 @@ function printDiv(divId) {
                                         <a href="/stone_flow/{{ next_step.url_name }}/{{ coop.id }}/" class="btn btn-success btn-lg">
                                             رفتن به مرحله بعد: {{ next_step.title }}
                                         </a>
+                                        <hr>
+                                        <a href="/stone_flow/coops/request_delete_coop/{{ coop.id }}/" class="btn btn-warning btn-lg">
+                                            حذف کوپ
+                                        </a>                       
                                     </div>
                                 {% else %}
                                     <div class="text-muted text-center mt-3">دسترسی مرحله بعد را ندارید</div>
