@@ -63,6 +63,15 @@ from .forms import UserForm, ProfileForm
 
 
 
+from .models import DailyReports , ReportTitles
+from .forms import DailyReportForm
+from datetime import date
+
+
+
+
+
+
 CACHE_CITIES = 'snapp_discount/cache/cities'
 
 # backend_endpoint
@@ -2212,10 +2221,7 @@ def edit_buyer(request, pk):
         form = BuyerForm(instance=buyer)
         buyer_attrs = BuyerAttributeValue.objects.filter(buyer=pk)
 
-        # list_buyer_attrs = []
 
-        # for attr in buyer_attrs:
-        #     list_buyer_attrs.append(attr)
 
     return render(request, 'Buyer/buyer_edit.html', {'form': form, 'title': 'ویرایش خریدار','buyer_attributes':buyer_attrs})
 
@@ -2311,7 +2317,7 @@ def buyer_login_view(request):
             name = form.cleaned_data['name']
             phone = form.cleaned_data['phone']
             try:
-                buyer = Buyer.objects.get(first_name=name, phone_number=phone)
+                buyer = Buyer.objects.filter(first_name=name, phone_number=phone).first()
                 request.session['buyer_id'] = buyer.id  # Save login session
                 return redirect('buyer_dashboard')
             except Buyer.DoesNotExist:
@@ -2396,11 +2402,6 @@ def delete_buyer_attribute(request, attr_id):
 
 
 
-
-
-from .models import DailyReports , ReportTitles
-from .forms import DailyReportForm
-from datetime import date
 
 # views.py
 # @login_required

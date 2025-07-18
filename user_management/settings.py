@@ -79,7 +79,8 @@ INSTALLED_APPS = [
     'formApp',
     'widget_tweaks',
     'StoneFlow',
-    'mines'
+    'mines',
+    'dashboard'
 
 ]
 

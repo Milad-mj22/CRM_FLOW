@@ -107,7 +107,7 @@ urlpatterns = [
 
 
     path('buyers/login/', buyer_login_view, name='buyer_login'),
-    path('buyers/dashboard_person/', buyer_dashboard_view, name='buyer_dashboard'),
+    path('buyers/dashboard_person/', buyer_dashboard_view, name='person_buyer_dashboard'),
     path('buyers/logout/',buyer_logout_view, name='buyer_logout'),
     path('buyers/confirm/<int:log_id>/', confirm_purchase_view, name='confirm_purchase'),
 

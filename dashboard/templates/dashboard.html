@@ -1,0 +1,130 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+  body {
+    background: linear-gradient(135deg, #f0f4ff, #ffffff);
+    font-family: 'Vazirmatn', sans-serif;
+  }
+
+  .glass-navbar {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+    padding: 1rem;
+    margin-bottom: 30px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .glass-navbar .btn {
+    border-radius: 50px;
+    padding: 10px 20px;
+    margin: 6px 6px;
+    font-weight: 500;
+    min-width: 140px;
+    transition: 0.3s;
+  }
+
+  .glass-navbar .btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .dashboard-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+  }
+
+  .dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  }
+
+  .dashboard-card h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    background: linear-gradient(to right, #0d6efd, #6610f2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+
+  .dashboard-card p {
+    font-size: 1.1rem;
+    color: #555;
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    .glass-navbar {
+      text-align: center;
+      overflow-x: auto;
+      padding: 1rem 0.5rem;
+    }
+
+    .glass-navbar .btn {
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      min-width: unset;
+    }
+
+    .dashboard-card {
+      padding: 20px 15px;
+    }
+
+    .dashboard-card h1 {
+      font-size: 2rem;
+    }
+  }
+</style>
+
+<body>
+
+
+<div class="container mt-4" dir="rtl">
+  <!-- Top Dashboard Navigation -->
+  <div class="glass-navbar d-flex flex-wrap justify-content-center">
+    <a href="{% url 'coop_dashboard' %}" class="btn btn-outline-primary">🏠 داشبورد</a>
+    <a href="{% url 'coop_dashboard' %}" class="btn btn-outline-info" >⛰ کوپ ها</a>
+    <!-- <a href="{% url 'coop_dashboard' %}" class="btn btn-outline-success">👤 کارمندان</a> -->
+    <a href="#" class="btn btn-outline-success disabled" tabindex="-1" aria-disabled="true">👤 کارمندان</a>
+
+    <a href="{% url 'buyer_dashboard' %}" class="btn btn-outline-success">👥 مشتریان</a>
+    <a href="{% url 'coop_dashboard' %}" class="btn btn-outline-warning disabled"  >⛏ معادن</a>
+    <a href="{% url 'coop_dashboard' %}" class="btn btn-outline-dark disabled">🏭 کارخانه‌ها</a>
+  </div>
+
+  <!-- Dashboard Stats Cards -->
+  <!-- <div class="row g-4">
+    <div class="col-sm-12 col-md-6 col-lg-4">
+      <div class="dashboard-card">
+        <h1>{{ total_coops }}</h1>
+        <p>بارگیری ثبت شده</p>
+      </div>
+    </div>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+      <div class="dashboard-card">
+        <h1>{{ total_users }}</h1>
+        <p>کاربران فعال</p>
+      </div>
+    </div>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+      <div class="dashboard-card">
+        <h1>{{ total_mines }}</h1>
+        <p>معادن فعال</p>
+      </div>
+    </div>
+  </div> -->
+</div>
+
+{% block content2 %}{% endblock content2 %}
+
+{% endblock %}
+</body>

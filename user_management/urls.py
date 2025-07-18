@@ -39,6 +39,7 @@ urlpatterns = [
      path('SocialApps/', include('SocialApps.urls')),  # ← add this line
      path('formApp/', include('formApp.urls')),  # ← add this line
      path('mines/', include('mines.urls')),
+     path('dashboard/', include('dashboard.urls')),
 
      path('', include('users.urls')),
 
