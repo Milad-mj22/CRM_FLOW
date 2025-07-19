@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from users.models import raw_material
+from users.models import Buyer, raw_material
 # Create your models here.
 
 STATE_CHOICES = [
@@ -272,3 +272,32 @@ class PriceAttribute(models.Model):
 
     def __str__(self):
         return f"{self.attribute.label} (ضریب: {self.multiplier})"
+    
+
+
+
+
+# models.py
+class PreInvoice(models.Model):
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="ایجاد کننده")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    customer = models.ForeignKey(Buyer, on_delete=models.CASCADE, verbose_name="نام مشتری")
+
+    note = models.TextField(blank=True, null=True, verbose_name="توضیحات")
+
+    def __str__(self):
+        return f"پیش‌فاکتور {self.id} - {self.customer_name}"
+
+
+class PreInvoiceItem(models.Model):
+    pre_invoice = models.ForeignKey(PreInvoice, on_delete=models.CASCADE, related_name="items")
+    coop = models.ForeignKey(coops, on_delete=models.CASCADE, verbose_name="کوپ انتخابی")
+    unit_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت واحد")
+    discount = models.DecimalField(max_digits=10, decimal_places=0, default=0, verbose_name="تخفیف")
+
+    def total_price(self):
+        return self.unit_price - self.discount
+
+    def __str__(self):
+        return f"آیتم {self.coop.material.name} برای {self.pre_invoice}"
