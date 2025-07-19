@@ -17,7 +17,7 @@ from users.utils.CalulatedDistance import calculate_distance
 
 from .forms import BuyerAttributeForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
 from django.views import generic
-from .models import AllowedLocation, BuyerAttribute, BuyerAttributeValue, CapturedImage, Inventory, InventoryLog, MaterialComposition, Post, RemainingMaterialsUsage,Tools,full_post,Profile
+from .models import AllowedLocation, BuyerAttribute, BuyerAttributeValue, CapturedImage, Inventory, InventoryLog, MaterialComposition, MenuItem, Post, RemainingMaterialsUsage,Tools,full_post,Profile
 from django.shortcuts import get_object_or_404
 import numpy as np
 from django.http import HttpResponse
@@ -2642,3 +2642,30 @@ def job_delete_view(request, pk):
         messages.success(request, 'شغل با موفقیت حذف شد.')
         return redirect('job_list')
     return render(request, 'jobs/job_confirm_delete.html', {'job': job})
+
+
+
+def manage_role_access(request):
+    roles = jobs.objects.all()
+    menu_items = MenuItem.objects.all()
+
+    if request.method == "POST":
+        for role in roles:
+            selected_items = []
+            for item in menu_items:
+                field_name = f"access_{role.id}_{item.id}"
+                if request.POST.get(field_name):
+                    selected_items.append(item)
+            role.items.set(selected_items)  # 👈 ذخیره دسترسی‌های جدید
+
+    # ساختن دیکشنری {role_id: [item_id, ...]} برای تیک زدن چک‌باکس‌ها
+    role_access = {
+        role.id: list(role.items.values_list('id', flat=True))
+        for role in roles
+    }
+
+    return render(request, 'roles/manage_access.html', {
+        'roles': roles,
+        'menu_items': menu_items,
+        'role_access': role_access,
+    })

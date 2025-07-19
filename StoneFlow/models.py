@@ -91,6 +91,7 @@ class CoopAttribute(models.Model):
         ('multi_select', 'چک‌باکس چندتایی'),  # ✅ new
         ('date', 'تاریخ (شمسی)'),  # ✅ اضافه شد
         ('price', 'قیمت'),  # ✅ اضافه شد
+        ('show_attr', 'نمایش ویژگی دیگر'),  # ✅ جدید
     )
 
 
@@ -188,6 +189,10 @@ class CoopAttributeValue(models.Model):
     attribute = models.ForeignKey(CoopAttribute, on_delete=models.CASCADE)
     value = models.CharField(max_length=500)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='CoopAttributeValue_submissions')
+
+    created_at = models.DateTimeField(auto_now_add=True)  # تاریخ و زمان ایجاد خودکار
+    updated_at = models.DateTimeField(auto_now=True)      # تاریخ و زمان آخرین به‌روزرسانی خودکار
+
 
     def __str__(self):
         return f"{self.attribute.name}: {self.value}"
@@ -301,3 +306,6 @@ class PreInvoiceItem(models.Model):
 
     def __str__(self):
         return f"آیتم {self.coop.material.name} برای {self.pre_invoice}"
+    
+
+

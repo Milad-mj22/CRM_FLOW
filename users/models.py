@@ -18,12 +18,27 @@ except AttributeError:
     RESAMPLING = Image.ANTIALIAS  # برای نسخه‌های قدیمی‌تر Pillow
 
 
+
+# آیتم قابل نمایش در منو (مثلاً کوپ‌ها، داشبورد و غیره)
+class MenuItem(models.Model):
+    title = models.CharField(max_length=100, verbose_name="عنوان آیتم")
+    icon = models.CharField(max_length=100, blank=True, verbose_name="آیکون (کلاس FontAwesome)")
+    url = models.CharField(max_length=200, verbose_name="آدرس URL")
+    order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+
+    def __str__(self):
+        return self.title
+
+
 class jobs(models.Model):
     name = models.CharField(max_length=200)
     persian_name = models.CharField(max_length=200)
     short_name = models.CharField(max_length=3,unique=True)
     describe = models.CharField(max_length=800)
     level = models.IntegerField()
+
+    items = models.ManyToManyField(MenuItem, blank=True, related_name="roles", verbose_name="دسترسی به آیتم‌ها")  # 👈 این خط را اضافه کن
+
 
     def __str__(self):
         return str(self.name)
@@ -774,3 +789,14 @@ class RemainingMaterialsUsage(models.Model):
 
 
 
+
+
+
+
+# اختصاص نقش به کاربر
+class UserRole(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="کاربر")
+    role = models.ForeignKey(jobs, on_delete=models.CASCADE, verbose_name="نقش")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.role.name}"

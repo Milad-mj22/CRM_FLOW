@@ -6,27 +6,6 @@
 
 
 
-<!-- <script>
-  function toggleSelectOptions() {
-    var fieldType = document.getElementById("id_field_type");
-    var selectOptionsDiv = document.getElementById("select-options-field");
-
-    if (fieldType && fieldType.value === "select") {
-      selectOptionsDiv.style.display = "block";
-    } else {
-      selectOptionsDiv.style.display = "none";
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    toggleSelectOptions();  // بار اول اجرا شود
-    var fieldTypeSelect = document.getElementById("id_field_type");
-    if (fieldTypeSelect) {
-      fieldTypeSelect.addEventListener("change", toggleSelectOptions);
-    }
-  });
-</script> -->
-
 
 
 <script>
@@ -50,7 +29,25 @@
   });
 </script>
 
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const labelInput = document.getElementById("id_field_type");
+    const showAttrDiv = document.getElementById("show-attr-div");
 
+    function toggleShowAttr() {
+      if (labelInput && labelInput.value.trim() === "show_attr") {
+        showAttrDiv.style.display = "block";
+      } else {
+        showAttrDiv.style.display = "none";
+      }
+    }
+
+    if (labelInput) {
+      labelInput.addEventListener("input", toggleShowAttr);
+      toggleShowAttr();  // برای بارگذاری اولیه
+    }
+  });
+</script>
 
 
 <style>
@@ -206,6 +203,17 @@
       </div>
 
 
+  <div class="col-lg-3 col-md-6" id="show-attr-div" style="display: none;">
+    <div class="card p-3">
+      <label for="show_attr_dropdown" class="form-label">انتخاب آیتم</label>
+      <select name="show_attr_value" id="show_attr_dropdown" class="form-select text-end">
+        {% for item in show_attr_items %}
+          <option value="{{ item.attribute.label }}">{{ item.attribute.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
 
 
 
@@ -253,6 +261,26 @@
       </button>
     </div>
   </form>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const dropdown = document.getElementById("show_attr_dropdown");
+    const defaultInput = document.getElementById("id_default_value");
+
+    if (dropdown && defaultInput) {
+      // زمانی که کاربر انتخاب می‌کند
+      dropdown.addEventListener("change", function () {
+        defaultInput.value = dropdown.options[dropdown.selectedIndex].text;
+      });
+
+      // اگر از قبل چیزی انتخاب شده، آن را هم ست کن
+      defaultInput.value = dropdown.options[dropdown.selectedIndex]?.text || "";
+    }
+  });
+</script>
+
+
 </div>
 
 

@@ -784,6 +784,9 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                     <input type="file" class="form-control" name="attr_{{ attr.id }}" accept="image/*" {% if attr.required %}required{% endif %}>
                     <input type="hidden" name="existing_image_{{ attr.id }}" value="{{ value }}">
 
+                {% elif attr.field_type == 'show_attr' %}
+                
+                    <input type="text" class="form-control text-end" value="{{ attr.value }}" disabled>
 
 
                 {% else %}

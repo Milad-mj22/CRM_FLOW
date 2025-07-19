@@ -114,6 +114,7 @@ TEMPLATES = [
 
                 'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
+                'users.context_processors.menu_items_processor',  # ✅ add this line
                 
             ],
         },

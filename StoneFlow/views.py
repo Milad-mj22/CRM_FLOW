@@ -635,12 +635,34 @@ def dynamic_step_view(request, url_name, order_id=None):
                 values = CoopAttributeValue.objects.filter(coop=coop_record)
                 for val in values:
                     attribute_values[val.attribute.id] = val.value
+                    print(val.attribute.field_type)
+                 
+            
+            for attr in attributes:
+                if attr.field_type == 'show_attr' :
+                    ref_attr = CoopAttribute.objects.filter(label=attr.default_value).first()
+                    # پیدا کردن ویژگی مرجع
+                    ref_attr_ = CoopAttributeValue.objects.filter(coop = coop_record, attribute=ref_attr).first()
+                    if ref_attr_:
+                        # گرفتن مقدار ویژگی مرجع
+                        if ref_attr.field_type == 'date':
+                            jalali_str = convert_str_date2jalalian(date=ref_attr_.value)
+                            attr.value = jalali_str
+                        else:
+                            attr.value = ref_attr_.value
+                        # attr.field_type = ref_attr.field_type
+
+                    else:
+                        attr.value = 'ویژگی یافت نشد'
+
+                    
 
             warehouses = Warehouse.objects.all()
             cutting_factories = Cutting_factory.objects.all()
             materials = raw_material.objects.all()
             cutting_saw_items = CuttingSaw.objects.filter(coop=coop_record)
             cutting_around_items = CuttingAround.objects.filter(coop=coop_record)
+
 
             # اینجا می‌تونی بر اساس نوع step اقدام خاصی انجام بدی
             return render(request, 'step_placeholder.html', {
@@ -667,8 +689,16 @@ def dynamic_step_view(request, url_name, order_id=None):
 
 
 
-
-
+def convert_str_date2jalalian(date:str):
+    try:
+        gregorian_date = datetime.strptime(date, '%Y-%m-%d')
+        jalali_date = jdatetime.date.fromgregorian(date=gregorian_date)
+        jalali_date.strftime('%Y/%m/%d')
+        jalali_str = jalali_date.strftime('%Y/%m/%d')
+        return jalali_str
+    except:
+        print('Error in convert date')
+        return date
 
 
 # views.py
@@ -824,9 +854,14 @@ def manage_coop_attributes(request):
                 print(form.errors)
                 messages.error(request, ' نام ویژگی تکراری است یا فرم کامل پرنشده است.', extra_tags='create_coop_feature_error')
 
+    show_attr_items = CoopAttributeValue.objects.all()
+
+
+
     return render(request, 'manage_attributes.html', {
         'form': form,
-        'attributes': attributes
+        'attributes': attributes,
+        'show_attr_items':show_attr_items
     })
 
 
