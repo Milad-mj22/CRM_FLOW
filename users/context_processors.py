@@ -1,5 +1,5 @@
 
-from users.models import MenuItem, UserRole
+from users.models import MenuItem, UserRole, jobs
 
 
 
@@ -11,7 +11,12 @@ def menu_items_processor(request):
     # گرفتن نقش‌های کاربر
     roles = UserRole.objects.filter(user=user).values_list('role_id', flat=True)
 
+    # job = jobs.objects.filter(name=user.profile.).first()
+# 
+    job = user.profile.job_position.name
+
+    items = user.profile.job_position.items.values()
     # گرفتن آیتم‌های منو مرتبط با نقش‌ها
-    items = MenuItem.objects.filter(roles__id__in=roles).distinct().order_by('order')
+    # items = MenuItem.objects.filter(roles__id__in=roles).distinct().order_by('order')
 
     return {'menu_items': items}

@@ -184,19 +184,21 @@
         </li>
       {% endfor %}
 
-    <a href="/tools"><i class="fas fa-tools me-2"></i> مدیریت</a>
-    <!-- <a href="/profile/{{ user.id }}/register_entry/"><i class="fas fa-list me-2"></i> ثبت تردد</a> -->
-    <!-- <a href="/profile/{{ user.id }}/history_entry/"><i class="fas fa-list-alt me-2"></i> نمایش کارکرد</a> -->
-    <a href="/profile"><i class="fas fa-user-circle me-2"></i> پروفایل کاربر</a>
-    <a href="/stone_flow/create_coope"><i class="fas fa-plus-circle me-2"></i> ایجاد کوپ</a>
-    <a href="/stone_flow/coops"><i class="fas fa-cubes me-2"></i> کوپ‌های موجود</a>
-    <a href="/dashboard"><i class="fas fa-chart-line me-2"></i> داشبورد</a>
-    <a href="/profile/store_add/"><i class="fas fa-plus me-2"></i> افزودن کالا</a>
-    <a href="/profile/store_take"><i class="fas fa-minus me-2"></i> خروج کالا</a>
-    <a href="/profile/store_product"><i class="fas fa-industry me-2"></i> تولید کالا</a>
-    <a href="/profile/store"><i class="fas fa-box-open me-2"></i> موجودی</a>
-    <a href="/profile/store_log"><i class="fas fa-history me-2"></i> تاریخچه</a>
-    <a href="/profile/create_material"><i class="fas fa-box me-2"></i> تعریف کالای جدید</a>
+      {% if  user.profile.job_position.name == 'Programmer'%}
+
+
+        <a href="/tools"><i class="fas fa-tools me-2"></i> مدیریت</a>
+        <a href="/profile"><i class="fas fa-user-circle me-2"></i> پروفایل کاربر</a>
+        <a href="/stone_flow/create_coope"><i class="fas fa-plus-circle me-2"></i> ایجاد کوپ</a>
+        <a href="/stone_flow/coops"><i class="fas fa-cubes me-2"></i> کوپ‌های موجود</a>
+        <a href="/dashboard"><i class="fas fa-chart-line me-2"></i> داشبورد</a>
+        <a href="/profile/store_add/"><i class="fas fa-plus me-2"></i> افزودن کالا</a>
+        <a href="/profile/store_take"><i class="fas fa-minus me-2"></i> خروج کالا</a>
+        <a href="/profile/store_product"><i class="fas fa-industry me-2"></i> تولید کالا</a>
+        <a href="/profile/store"><i class="fas fa-box-open me-2"></i> موجودی</a>
+        <a href="/profile/store_log"><i class="fas fa-history me-2"></i> تاریخچه</a>
+        <a href="/profile/create_material"><i class="fas fa-box me-2"></i> تعریف کالای جدید</a> 
+      {% endif %}
     <hr>
     <a href="/login/"><i class="fas fa-sign-out-alt me-2"></i> خروج</a>
     {% else %}

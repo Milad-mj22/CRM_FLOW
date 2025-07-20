@@ -2528,29 +2528,24 @@ def user_list_view(request):
     return render(request, 'users/user_list.html', {'users': users})
 
 
-
-
 def create_user_view(request):
     if request.method == 'POST':
         user_form = UserForm(request.POST)
         profile_form = ProfileForm(request.POST, request.FILES)
 
         if user_form.is_valid() and profile_form.is_valid():
-            user = user_form.save(commit=False)
-            if user_form.cleaned_data['password']:
-                user.set_password(user_form.cleaned_data['password'])
-            user.save()
-
-            # بررسی اینکه پروفایل برای این کاربر وجود دارد یا نه
-            profile_qs = Profile.objects.filter(user=user)
-            if profile_qs.exists():
-                profile = profile_qs.first()
-                profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
-            else:
-                profile = profile_form.save(commit=False)
-                profile.user = user
-
-            profile_form.save()
+            try:
+                user = user_form.save(commit=False)
+                if user_form.cleaned_data['password']:
+                    user.set_password(user_form.cleaned_data['password'])
+                user.save()
+            except Exception as e:
+                print(e)
+                
+            # ساخت پروفایل با اتصال به کاربر
+            profile = profile_form.save(commit=False)
+            profile.user = user
+            profile.save()
 
             messages.success(request, "کاربر با موفقیت ایجاد شد.")
             return redirect('user_list')
@@ -2564,8 +2559,6 @@ def create_user_view(request):
         'user_form': user_form,
         'profile_form': profile_form,
     })
-
-
 
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
