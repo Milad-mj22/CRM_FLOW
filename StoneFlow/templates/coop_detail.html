@@ -186,7 +186,7 @@ function printDiv(divId) {
                                             <i class="bi bi-arrow-left-right timeline-icon"></i>
                                             {{ history.new_state.title }} ➜ {{ history.previous_state.title|default:" نامشخص " }}
                                         </div>
-                                        <small class="text-muted">توسط {{ history.changed_by.username }}</small>
+                                        <small class="text-muted">توسط {{ history.changed_by.profile.first_name }}</small>
                                     </div>
                                     <div>
                                         <small class="text-muted"><i class="bi bi-calendar-event"></i> {{ history.changed_at|date:"Y-m-d H:i" }}</small>

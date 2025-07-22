@@ -38,7 +38,7 @@ from io import BytesIO
 import base64
 from django.contrib.auth.decorators import user_passes_test
 
-
+from django.db.models import OuterRef, Subquery, DateTimeField, IntegerField
 
 def get_allowed_confirm_users(stepNumber:int,user):
 
@@ -94,7 +94,20 @@ def coops_by_state(request):
     selected_material_id = request.GET.get('material')
     page = int(request.GET.get('page', 1))
 
-    coop_list = coops.objects.filter(is_active=True).order_by('-id')
+    # coop_list = coops.objects.filter(is_active=True).order_by('-id')
+
+    # Subqueries to get latest state and changed_at from CoopStateHistory
+# Subquery to get latest CoopStateHistory per coop
+    latest_history = CoopStateHistory.objects.filter(
+        coop=OuterRef('pk')
+    ).order_by('-changed_at')
+
+    coop_list = coops.objects.annotate(
+        last_changed_at=Subquery(latest_history.values('changed_at')[:1], output_field=DateTimeField()),
+        last_state=Subquery(latest_history.values('new_state_id')[:1])  # Important for filtering
+    ).filter(is_active=True).order_by('-last_changed_at')
+
+
     steps = Step.objects.order_by('order')  # مرتب‌سازی مراحل
     materials = raw_material.objects.all()
 
@@ -252,13 +265,18 @@ def create_coope(request):
             try:
                 if value and float(value) > 0:
                     raw_material_obj = raw_material.objects.get(name=field)
-                    coop_record = coops.objects.create(
+
+                    coop_record = coops(
                         user=request.user,
                         material=raw_material_obj,
                         quantity=Decimal(value),
-                        state = step,
+                        state=step,
                         image=image
                     )
+                    coop_record.set_changed_by(request.user)
+                    coop_record.save()
+
+
             except Exception as e:
                 # raise Exception(f"خطا در ثبت مواد اولیه: {field}")
                 print('Error is Save Raw amterial', field)
@@ -429,6 +447,7 @@ def dynamic_step_view(request, url_name, order_id=None):
                 raise Exception("هیچ کوپی ثبت نشد")
             
             coop_record.state = step
+            coop_record._changed_by = request.user
             coop_record.save()
 
 

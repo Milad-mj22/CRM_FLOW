@@ -2533,24 +2533,41 @@ def create_user_view(request):
         user_form = UserForm(request.POST)
         profile_form = ProfileForm(request.POST, request.FILES)
 
-        if user_form.is_valid() and profile_form.is_valid():
-            try:
-                user = user_form.save(commit=False)
-                if user_form.cleaned_data['password']:
-                    user.set_password(user_form.cleaned_data['password'])
-                user.save()
-            except Exception as e:
-                print(e)
-                
-            # ساخت پروفایل با اتصال به کاربر
-            profile = profile_form.save(commit=False)
-            profile.user = user
-            profile.save()
+        try:
 
-            messages.success(request, "کاربر با موفقیت ایجاد شد.")
-            return redirect('user_list')
-        else:
-            messages.error(request, 'لطفا خطاهای فرم را اصلاح کنید.')
+            if user_form.is_valid() and profile_form.is_valid():
+                username = request.POST['username']
+                password = request.POST['password']
+
+
+                # ایجاد کاربر
+                user = User.objects.create_user(username=username, password=password)
+
+                # دریافت یا ساخت پروفایل مرتبط با کاربر
+                profile, created = Profile.objects.get_or_create(user=user)
+
+                # ساخت فرم با داده‌های POST و اتصال به پروفایل موجود
+                profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+
+
+                # بررسی صحت فرم
+                if profile_form.is_valid():
+                    profile = profile_form.save(commit=False)
+                    profile.user = user  # این خط اگر از get_or_create استفاده شده، لازم نیست اما برای اطمینان بد نیست
+                    profile.save()
+
+                    if created:
+                        messages.success(request, "پروفایل جدید با موفقیت ایجاد شد.")
+                    else:
+                        messages.success(request, "پروفایل با موفقیت به‌روزرسانی شد.")
+
+                    return redirect('user_list')
+                
+            else:
+                messages.error(request, 'لطفا خطاهای فرم را اصلاح کنید.')
+        except:
+            return redirect('error_page')
+            
     else:
         user_form = UserForm()
         profile_form = ProfileForm()
