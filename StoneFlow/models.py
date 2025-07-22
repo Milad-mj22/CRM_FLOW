@@ -92,6 +92,7 @@ class CoopAttribute(models.Model):
         ('date', 'تاریخ (شمسی)'),  # ✅ اضافه شد
         ('price', 'قیمت'),  # ✅ اضافه شد
         ('show_attr', 'نمایش ویژگی دیگر'),  # ✅ جدید
+
     )
 
 
@@ -129,6 +130,9 @@ class coops(models.Model):
     image = models.ImageField(upload_to='mining_remittance/', blank=True, null=True)  # Added field for image
 
     is_active = models.BooleanField(default=True)
+
+    is_sell = models.BooleanField(default=False)
+
 
     # فقط برای نگهداری موقتی کاربر تغییر دهنده
     _changed_by = None
@@ -249,12 +253,24 @@ class Cutting_factory(models.Model):
 class CuttingSaw(models.Model):
 
     coop = models.ForeignKey(coops, on_delete=models.CASCADE, related_name='CuttingSaw_values')
+ 
     length = models.FloatField(verbose_name="طول")
     width = models.FloatField(verbose_name="عرض")
     quantity = models.PositiveIntegerField(verbose_name="تعداد")
     description = models.CharField(max_length=1000, verbose_name="توضیحات", blank=True)
+
+    image = models.ImageField(upload_to='Stone/', blank=True, null=True,verbose_name="تصویر")  # Added field for image
+    sell_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت فروش",blank=True,null=True,default=0)
+    production_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت تولیدی",blank=True,null=True,default=0)
+
+
+
+    is_active = models.BooleanField(default=True)
+    is_sell = models.BooleanField(default=False)
+
+
     def __str__(self):
-        return f"{self.coop.material.name if self.coop.material else '---'} - {self.lenght} {self.width} {self.quantity} "
+        return f"{self.coop.material.name if self.coop.material else '---'} - {self.length} {self.width} {self.quantity} "
 
 
 class CuttingAround(models.Model):
@@ -292,12 +308,12 @@ class PreInvoice(models.Model):
     note = models.TextField(blank=True, null=True, verbose_name="توضیحات")
 
     def __str__(self):
-        return f"پیش‌فاکتور {self.id} - {self.customer_name}"
+        return f"پیش‌فاکتور {self.id} - {self.customer.first_name}"
 
 
 class PreInvoiceItem(models.Model):
     pre_invoice = models.ForeignKey(PreInvoice, on_delete=models.CASCADE, related_name="items")
-    coop = models.ForeignKey(coops, on_delete=models.CASCADE, verbose_name="کوپ انتخابی")
+    coop = models.ForeignKey(CuttingSaw, on_delete=models.CASCADE, verbose_name="کوپ انتخابی")
     unit_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت واحد")
     discount = models.DecimalField(max_digits=10, decimal_places=0, default=0, verbose_name="تخفیف")
 
@@ -305,7 +321,7 @@ class PreInvoiceItem(models.Model):
         return self.unit_price - self.discount
 
     def __str__(self):
-        return f"آیتم {self.coop.material.name} برای {self.pre_invoice}"
+        return f"آیتم {self.coop.coop.material.name} برای {self.pre_invoice}"
     
 
 

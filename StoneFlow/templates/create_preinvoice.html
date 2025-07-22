@@ -51,6 +51,18 @@
       </select>
     </div>
 
+
+    <div class="mb-4">
+      <label for="price" class="form-label">قیمت فاکتور بر اساس :</label>
+      <select name="price" id="price" class="form-select" required>
+        <option value="production_price" selected>قیمت تولیدی</option>
+        <option value="sell_price">قیمت فروش</option>
+      </select>
+    </div>
+
+
+
+
     <h5 class="fw-bold mb-3 text-success">🧱 انتخاب کوپ‌ها و قیمت:</h5>
     <div class="table-responsive">
       <table class="table table-bordered table-hover text-center align-middle shadow-sm">
@@ -65,21 +77,22 @@
           </tr>
         </thead>
         <tbody>
-          {% for coop in coops %}
+          {% for stone in stones %}
+          
           <tr>
             <td>
-              <input type="checkbox" name="selected_coops" value="{{ coop.id }}">
+              <input type="checkbox" name="selected_coops" value="{{ stone.id }}">
             </td>
-            <td>{{ coop.material.name }}</td>
-            <td>{{ coop.quantity }}</td>
+            <td>{{ stone.coop.material.name }}</td>
+            <td>{{ stone.quantity }}</td>
             <td>
-              <input type="text" step="0.01" name="price_{{ coop.id }}" class="form-control text-center" value="{{coop.total_price}}">
-            </td>
-            <td>
-              <input type="text" step="0.01" name="sell_price_{{ coop.id }}" class="form-control text-center" value="{{coop.sell_price}}">
+              <input type="text" step="0.01" name="price_{{ stone.id }}" class="form-control text-center" value="{{stone.sell_price}}">
             </td>
             <td>
-              <input type="number" step="0.01" name="discount_{{ coop.id }}" class="form-control text-center" value="0">
+              <input type="text" step="0.01" name="sell_price_{{ stone.id }}" class="form-control text-center" value="{{stone.production_price}}">
+            </td>
+            <td>
+              <input type="number" step="0.01" name="discount_{{ stone.id }}" class="form-control text-center" value="0">
             </td>
           </tr>
           {% endfor %}
@@ -95,6 +108,11 @@
         <option value="en">English</option>
       </select>
     </div>
+
+
+
+
+
 
     <div class="text-center mt-4">
       <button type="submit" class="save-btn">📥 ایجاد فایل پیش‌فاکتور</button>
