@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 import openpyxl
 import win32com.client
 
-from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, CoopDeleteRequest, Cutting_factory, CuttingAround, CuttingSaw, PriceAttribute
+from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, CoopDeleteRequest, Cutting_factory, CuttingAround, CuttingSaw, PreInvoice, PreInvoiceItem, PriceAttribute
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
@@ -1110,6 +1110,10 @@ def create_preinvoice_view(request):
         today_gregorian = datetime.today()
 
 
+        current_preInvoice = PreInvoice.objects.create(created_by=request.user,customer=customer)
+
+
+
 
 
         language = request.POST.get('language', 'fa')
@@ -1152,7 +1156,7 @@ def create_preinvoice_view(request):
             # except:
             #     price = 0
             discount = float(request.POST.get(f'discount_{coop.id}', '0'))
-            total = quantity * price * (100 - discount) / 100
+            total = price * (100 - discount) / 100
 
             ws.cell(row=row, column=col_start, value=iter+1)
             ws.cell(row=row, column=col_start+1, value=material_name)
@@ -1164,6 +1168,13 @@ def create_preinvoice_view(request):
             total_price+=(float(total))
             total_discount+=(float(discount))
             row += 1
+
+            PreInvoiceItem.objects.create(pre_invoice = current_preInvoice,coop=coop,
+                                          unit_price=float(price),discount=float(discount))
+
+
+
+
 
         ws['G15'] =  total_price
         ws['G16'] =  total_discount
@@ -1515,3 +1526,27 @@ def reject_delete_request(request, coop_id):
 
 
 
+
+@login_required
+def user_preinvoices(request):
+    preinvoices = PreInvoice.objects.filter(created_by=request.user).order_by('-created_at')
+    return render(request, 'preInvoice/preinvoice_list.html', {'preinvoices': preinvoices})
+
+@login_required
+def delete_preinvoice(request, pk):
+    invoice = get_object_or_404(PreInvoice, pk=pk, created_by=request.user)
+    invoice.delete()
+    return redirect('user_preinvoices')
+
+@login_required
+def sell_preinvoice(request, pk):
+    invoice = get_object_or_404(PreInvoice, pk=pk, created_by=request.user)
+    # عملیات تبدیل به فروش (مثلاً انتقال به مدل Invoice)
+    # TODO: implement real logic here
+    invoice.delete()  # فقط برای تست
+    return redirect('user_preinvoices')
+
+@login_required
+def preinvoice_detail(request, pk):
+    invoice = get_object_or_404(PreInvoice, pk=pk, created_by=request.user)
+    return render(request, 'preinvoice/detail.html', {'preinvoice': invoice})
