@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 import openpyxl
 import win32com.client
 
-from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, CoopDeleteRequest, Cutting_factory, CuttingAround, CuttingSaw, PriceAttribute
+from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, CoopDeleteRequest, Cutting_factory, CuttingAround, CuttingSaw, PreInvoice, PreInvoiceItem, PriceAttribute
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops
 from mines.models import Mine
@@ -38,12 +38,16 @@ from io import BytesIO
 import base64
 from django.contrib.auth.decorators import user_passes_test
 
+<<<<<<< HEAD
 
 from openpyxl.styles import Font, Alignment
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
+=======
+from django.db.models import OuterRef, Subquery, DateTimeField, IntegerField
+>>>>>>> 30e0d4418257bdbf8d800f4019771d187d6366b5
 
 def get_allowed_confirm_users(stepNumber:int,user):
 
@@ -99,7 +103,20 @@ def coops_by_state(request):
     selected_material_id = request.GET.get('material')
     page = int(request.GET.get('page', 1))
 
-    coop_list = coops.objects.filter(is_active=True).order_by('-id')
+    # coop_list = coops.objects.filter(is_active=True).order_by('-id')
+
+    # Subqueries to get latest state and changed_at from CoopStateHistory
+# Subquery to get latest CoopStateHistory per coop
+    latest_history = CoopStateHistory.objects.filter(
+        coop=OuterRef('pk')
+    ).order_by('-changed_at')
+
+    coop_list = coops.objects.annotate(
+        last_changed_at=Subquery(latest_history.values('changed_at')[:1], output_field=DateTimeField()),
+        last_state=Subquery(latest_history.values('new_state_id')[:1])  # Important for filtering
+    ).filter(is_active=True).order_by('-last_changed_at')
+
+
     steps = Step.objects.order_by('order')  # مرتب‌سازی مراحل
     materials = raw_material.objects.all()
 
@@ -257,13 +274,18 @@ def create_coope(request):
             try:
                 if value and float(value) > 0:
                     raw_material_obj = raw_material.objects.get(name=field)
-                    coop_record = coops.objects.create(
+
+                    coop_record = coops(
                         user=request.user,
                         material=raw_material_obj,
                         quantity=Decimal(value),
-                        state = step,
+                        state=step,
                         image=image
                     )
+                    coop_record.set_changed_by(request.user)
+                    coop_record.save()
+
+
             except Exception as e:
                 # raise Exception(f"خطا در ثبت مواد اولیه: {field}")
                 print('Error is Save Raw amterial', field)
@@ -434,6 +456,7 @@ def dynamic_step_view(request, url_name, order_id=None):
                 raise Exception("هیچ کوپی ثبت نشد")
             
             coop_record.state = step
+            coop_record._changed_by = request.user
             coop_record.save()
 
 
@@ -472,6 +495,10 @@ def dynamic_step_view(request, url_name, order_id=None):
                     widths = request.POST.getlist('cutting_width[]')
                     quantities = request.POST.getlist('cutting_quantity[]')
                     descriptions = request.POST.getlist('cutting_description[]')
+                    sell_prices = request.POST.getlist('cutting_sell_price[]')
+                    production_prices = request.POST.getlist('cutting_production_price[]')
+
+
 
                     for i in range(len(lengths)):
                         try:
@@ -479,15 +506,23 @@ def dynamic_step_view(request, url_name, order_id=None):
                             width = float(widths[i])
                             quantity = int(quantities[i])
                             description = descriptions[i]
-
+                            sell_price = None
+                            production_price = None
+                            try:
+                                sell_price = float(sell_prices[i])
+                                production_price = float(production_prices[i])
+                            except:
+                                pass
                             if length > 0 and width > 0 and quantity > 0:
-                                cutting_saw_obj  = CuttingSaw.objects.create(
-                                    coop=coop_record,
-                                    lenght=length,
-                                    width=width,
-                                    quantity=quantity,
-                                    description=description
-                                )
+
+                                cutting_saw_obj , created = CuttingSaw.objects.get_or_create(
+                                                            coop=coop_record,
+                                                            length=length,
+                                                            width=width,
+                                                            quantity=quantity,
+                                                            description=description
+                                                        )
+
 
                                 CoopAttributeValue.objects.create(
                                     coop=coop_record,
@@ -500,7 +535,38 @@ def dynamic_step_view(request, url_name, order_id=None):
 
                         except (ValueError, IndexError) as e:
                             print(f'خطا در ثبت CuttingSaw در ردیف {i}: {e}')
-                    continue  # چون مقدار در مدل دیگر ذخیره شد، ادامه نده
+
+
+
+
+                    result = {}
+
+                    for key, value in request.POST.items():
+                        if 'sell_price' in key or 'production_price' in key:
+                            # Extract suffix (e.g., '1' from 'attr_47_sell_price_1')
+                            parts = key.split('_')
+                            suffix = parts[-1]
+                            price_type = 'sell' if 'sell_price' in key else 'prod'
+
+                            # Set value or default to '0' if None or empty
+                            cleaned_value = value.strip() if value and value.strip() != 'None' else '0'
+                            cleaned_value = convert_str_price2float(cleaned_value)
+                            # Ensure the inner dict exists
+                            if suffix not in result:
+                                result[suffix] = {}
+
+                            result[suffix][price_type] = cleaned_value
+
+
+                    items = CuttingSaw.objects.filter(coop=coop_record)
+
+                    for item in items:
+                        key = str(item.id)  # or another field if `id` isn't the match
+                        if key in result:
+                            item.sell_price = int(result[key]['sell'])
+                            item.production_price = int(result[key]['prod'])
+                            item.save()
+
 
 
 
@@ -540,6 +606,10 @@ def dynamic_step_view(request, url_name, order_id=None):
                         except (ValueError, IndexError) as e:
                             print(f'خطا در ثبت CuttingAround در ردیف {i}: {e}')
                     continue  # چون مقدار در مدل دیگر ذخیره شد، ادامه نده
+
+
+
+
 
                 elif attr.field_type == 'multi_select':
                     values = request.POST.getlist(field_name)
@@ -640,12 +710,34 @@ def dynamic_step_view(request, url_name, order_id=None):
                 values = CoopAttributeValue.objects.filter(coop=coop_record)
                 for val in values:
                     attribute_values[val.attribute.id] = val.value
+                    print(val.attribute.field_type)
+                 
+            
+            for attr in attributes:
+                if attr.field_type == 'show_attr' :
+                    ref_attr = CoopAttribute.objects.filter(label=attr.default_value).first()
+                    # پیدا کردن ویژگی مرجع
+                    ref_attr_ = CoopAttributeValue.objects.filter(coop = coop_record, attribute=ref_attr).first()
+                    if ref_attr_:
+                        # گرفتن مقدار ویژگی مرجع
+                        if ref_attr.field_type == 'date':
+                            jalali_str = convert_str_date2jalalian(date=ref_attr_.value)
+                            attr.value = jalali_str
+                        else:
+                            attr.value = ref_attr_.value
+                        # attr.field_type = ref_attr.field_type
+
+                    else:
+                        attr.value = 'ویژگی یافت نشد'
+
+                    
 
             warehouses = Warehouse.objects.all()
             cutting_factories = Cutting_factory.objects.all()
             materials = raw_material.objects.all()
             cutting_saw_items = CuttingSaw.objects.filter(coop=coop_record)
             cutting_around_items = CuttingAround.objects.filter(coop=coop_record)
+
 
             # اینجا می‌تونی بر اساس نوع step اقدام خاصی انجام بدی
             return render(request, 'step_placeholder.html', {
@@ -672,8 +764,16 @@ def dynamic_step_view(request, url_name, order_id=None):
 
 
 
-
-
+def convert_str_date2jalalian(date:str):
+    try:
+        gregorian_date = datetime.strptime(date, '%Y-%m-%d')
+        jalali_date = jdatetime.date.fromgregorian(date=gregorian_date)
+        jalali_date.strftime('%Y/%m/%d')
+        jalali_str = jalali_date.strftime('%Y/%m/%d')
+        return jalali_str
+    except:
+        print('Error in convert date')
+        return date
 
 
 # views.py
@@ -829,9 +929,14 @@ def manage_coop_attributes(request):
                 print(form.errors)
                 messages.error(request, ' نام ویژگی تکراری است یا فرم کامل پرنشده است.', extra_tags='create_coop_feature_error')
 
+    show_attr_items = CoopAttributeValue.objects.all()
+
+
+
     return render(request, 'manage_attributes.html', {
         'form': form,
-        'attributes': attributes
+        'attributes': attributes,
+        'show_attr_items':show_attr_items
     })
 
 
@@ -1050,7 +1155,11 @@ def create_preinvoice_view(request):
         customer = Buyer.objects.get(id=customer_id)
 
         selected_ids = request.POST.getlist('selected_coops')
-        selected_coops = coops.objects.filter(id__in=selected_ids)
+
+
+        selected_coops = CuttingSaw.objects.filter(id__in=selected_ids)
+
+        # selected_coops = coops.objects.filter(id__in=selected_ids)
 
         # Load template
 
@@ -1059,6 +1168,10 @@ def create_preinvoice_view(request):
 
         # تاریخ امروز میلادی
         today_gregorian = datetime.today()
+
+
+        current_preInvoice = PreInvoice.objects.create(created_by=request.user,customer=customer)
+
 
 
 
@@ -1078,6 +1191,17 @@ def create_preinvoice_view(request):
         today_gregorian = today_gregorian.strftime('%Y/%m/%d')
 
 
+        price_type_option =  request.POST.get('price', 'sell_price')
+        
+        if price_type_option == 'sell_price':
+            price_type = 'sell_price_'
+        else:
+            price_type = 'price_'
+            
+
+
+
+
         wb = openpyxl.load_workbook(template_path)
         ws = wb.active
 
@@ -1094,16 +1218,17 @@ def create_preinvoice_view(request):
         total_price = 0
         total_discount = 0
 
-        for iter,coop in enumerate(selected_coops):
-            material_name = coop.material.name
-            quantity = coop.quantity
+        for iter,stone in enumerate(selected_coops):
+        
+            material_name = stone.coop.material.name
+            quantity = stone.quantity
             # try:
-            price = (request.POST.get(f'price_{coop.id}', '0'))
+            price = (request.POST.get(f'{price_type}{stone.id}', '0'))
             price = convert_str_price2float(price=price)
             # except:
             #     price = 0
-            discount = float(request.POST.get(f'discount_{coop.id}', '0'))
-            total = quantity * price * (100 - discount) / 100
+            discount = float(request.POST.get(f'discount_{stone.id}', '0'))
+            total = price * (100 - discount) / 100
 
             ws.cell(row=row, column=col_start, value=iter+1)
             ws.cell(row=row, column=col_start+1, value=material_name)
@@ -1115,6 +1240,13 @@ def create_preinvoice_view(request):
             total_price+=(float(total))
             total_discount+=(float(discount))
             row += 1
+
+            PreInvoiceItem.objects.create(pre_invoice = current_preInvoice,coop=stone,
+                                          unit_price=float(price),discount=float(discount))
+
+
+
+
 
         ws['G15'] =  total_price
         ws['G16'] =  total_discount
@@ -1150,35 +1282,45 @@ def create_preinvoice_view(request):
         return response
 
     else:
-        coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
+        # coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
 
-        for coop in coops_final:
-            coop.total_price =  calculate_total_price(coop=coop)
-            try:
-                sell_price = coop.attribute_values.filter(attribute__label="قیمت فروش").first()
-            
-                # print(coop.sell)
-                if sell_price is not None:
-                    if sell_price.value !='None':
-                        sell_price = sell_price.value
-                        sell_price = (sell_price.replace(':', ''))
-                        sell_price = (sell_price.replace(' ', ''))
-                        # sell_price = Decimal(number)
-                    else:
-                        sell_price =0 
-                else:
-                    sell_price = 0
+        # stones = []
 
-            except:
-                sell_price = 0
+        # coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
 
+        # for coop in coops_final:
+        #     coop.total_price = calculate_total_price(coop=coop)
 
-            coop.sell_price = sell_price
+        #     try:
+        #         sell_price_attr = coop.attribute_values.filter(attribute__label="قیمت فروش").first()
+        #         if sell_price_attr and sell_price_attr.value and sell_price_attr.value != 'None':
+        #             cleaned_value = sell_price_attr.value.replace(':', '').replace(' ', '')
+        #             sell_price = Decimal(cleaned_value)
+        #         else:
+        #             sell_price = Decimal(0)
+        #     except:
+        #         sell_price = Decimal(0)
+
+        #     coop.sell_price = sell_price
+
+        #     # Add all related stones
+        #     for stone in coop.CuttingSaw_values.all():  # Assuming 'stones' is related_name
+        #         stone.coop = coop  # attach coop to use its data in template
+        #         stone.sell_price = sell_price
+        #         stone.total_price = coop.total_price
+        #         stones.append(stone)
+
+        items = CuttingSaw.objects.all()
+        final_items = []
+        for item in items:
+            if item.coop.state.order>=7:
+                final_items.append(item)
+
 
         customers = Buyer.objects.all()
 
         return render(request, 'create_preinvoice.html', {
-            'coops': coops_final,
+            'stones': final_items,
             'customers': customers,
         })
     
@@ -1461,3 +1603,36 @@ def reject_delete_request(request, coop_id):
 
  
 
+
+@login_required
+def user_preinvoices(request):
+    preinvoices = PreInvoice.objects.filter(created_by=request.user).order_by('-created_at')
+    return render(request, 'preInvoice/preinvoice_list.html', {'preinvoices': preinvoices})
+
+@login_required
+def delete_preinvoice(request, pk):
+    invoice = get_object_or_404(PreInvoice, pk=pk, created_by=request.user)
+    invoice.delete()
+    return redirect('user_preinvoices')
+
+@login_required
+def sell_preinvoice(request, pk):
+    invoice = get_object_or_404(PreInvoice, pk=pk, created_by=request.user)
+    
+    items = PreInvoiceItem.objects.filter(pre_invoice = invoice)
+
+    for item in items:
+        coop = item.coop
+        coop.is_active = False
+        coop.is_sell = True
+
+
+    # عملیات تبدیل به فروش (مثلاً انتقال به مدل Invoice)
+    # TODO: implement real logic here
+    invoice.delete()  # فقط برای تست
+    return redirect('user_preinvoices')
+
+@login_required
+def preinvoice_detail(request, pk):
+    invoice = get_object_or_404(PreInvoice, pk=pk, created_by=request.user)
+    return render(request, 'preinvoice/detail.html', {'preinvoice': invoice})

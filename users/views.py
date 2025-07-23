@@ -17,7 +17,7 @@ from users.utils.CalulatedDistance import calculate_distance
 
 from .forms import BuyerAttributeForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
 from django.views import generic
-from .models import AllowedLocation, BuyerAttribute, BuyerAttributeValue, CapturedImage, Inventory, InventoryLog, MaterialComposition, Post, RemainingMaterialsUsage,Tools,full_post,Profile
+from .models import AllowedLocation, BuyerAttribute, BuyerAttributeValue, CapturedImage, Inventory, InventoryLog, MaterialComposition, MenuItem, Post, RemainingMaterialsUsage,Tools,full_post,Profile
 from django.shortcuts import get_object_or_404
 import numpy as np
 from django.http import HttpResponse
@@ -2528,34 +2528,46 @@ def user_list_view(request):
     return render(request, 'users/user_list.html', {'users': users})
 
 
-
-
 def create_user_view(request):
     if request.method == 'POST':
         user_form = UserForm(request.POST)
         profile_form = ProfileForm(request.POST, request.FILES)
 
-        if user_form.is_valid() and profile_form.is_valid():
-            user = user_form.save(commit=False)
-            if user_form.cleaned_data['password']:
-                user.set_password(user_form.cleaned_data['password'])
-            user.save()
+        try:
 
-            # بررسی اینکه پروفایل برای این کاربر وجود دارد یا نه
-            profile_qs = Profile.objects.filter(user=user)
-            if profile_qs.exists():
-                profile = profile_qs.first()
+            if user_form.is_valid() and profile_form.is_valid():
+                username = request.POST['username']
+                password = request.POST['password']
+
+
+                # ایجاد کاربر
+                user = User.objects.create_user(username=username, password=password)
+
+                # دریافت یا ساخت پروفایل مرتبط با کاربر
+                profile, created = Profile.objects.get_or_create(user=user)
+
+                # ساخت فرم با داده‌های POST و اتصال به پروفایل موجود
                 profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+
+
+                # بررسی صحت فرم
+                if profile_form.is_valid():
+                    profile = profile_form.save(commit=False)
+                    profile.user = user  # این خط اگر از get_or_create استفاده شده، لازم نیست اما برای اطمینان بد نیست
+                    profile.save()
+
+                    if created:
+                        messages.success(request, "پروفایل جدید با موفقیت ایجاد شد.")
+                    else:
+                        messages.success(request, "پروفایل با موفقیت به‌روزرسانی شد.")
+
+                    return redirect('user_list')
+                
             else:
-                profile = profile_form.save(commit=False)
-                profile.user = user
-
-            profile_form.save()
-
-            messages.success(request, "کاربر با موفقیت ایجاد شد.")
-            return redirect('user_list')
-        else:
-            messages.error(request, 'لطفا خطاهای فرم را اصلاح کنید.')
+                messages.error(request, 'لطفا خطاهای فرم را اصلاح کنید.')
+        except:
+            return redirect('error_page')
+            
     else:
         user_form = UserForm()
         profile_form = ProfileForm()
@@ -2564,8 +2576,6 @@ def create_user_view(request):
         'user_form': user_form,
         'profile_form': profile_form,
     })
-
-
 
 def edit_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
@@ -2642,3 +2652,30 @@ def job_delete_view(request, pk):
         messages.success(request, 'شغل با موفقیت حذف شد.')
         return redirect('job_list')
     return render(request, 'jobs/job_confirm_delete.html', {'job': job})
+
+
+
+def manage_role_access(request):
+    roles = jobs.objects.all()
+    menu_items = MenuItem.objects.all()
+
+    if request.method == "POST":
+        for role in roles:
+            selected_items = []
+            for item in menu_items:
+                field_name = f"access_{role.id}_{item.id}"
+                if request.POST.get(field_name):
+                    selected_items.append(item)
+            role.items.set(selected_items)  # 👈 ذخیره دسترسی‌های جدید
+
+    # ساختن دیکشنری {role_id: [item_id, ...]} برای تیک زدن چک‌باکس‌ها
+    role_access = {
+        role.id: list(role.items.values_list('id', flat=True))
+        for role in roles
+    }
+
+    return render(request, 'roles/manage_access.html', {
+        'roles': roles,
+        'menu_items': menu_items,
+        'role_access': role_access,
+    })

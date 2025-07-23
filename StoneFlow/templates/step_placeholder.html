@@ -68,6 +68,16 @@
                 <div class="col">
                     <input type="text" name="cutting_description[]" class="form-control" placeholder="توضیحات (اختیاری)">
                 </div>
+                {% if step.order > 5 %}
+                <div class="col">
+                    <input type="number" name="cutting_sell_price[]" class="form-control" placeholder="قیمت فروش">
+                </div>
+                <div class="col">
+                    <input type="number" name="cutting_production_price[]" class="form-control" placeholder="قیمت تولیدی">
+                </div>
+                {% endif %}
+
+
                 <div class="col-auto">
                     <button type="button" class="btn btn-danger remove-row">✖</button>
                 </div>
@@ -571,7 +581,7 @@ document.querySelectorAll('.price-field').forEach(function(input) {
         <!-- <div class="col-md-4 mb-3"> -->
         <div class="{% if attr.field_type == 'material' %}col-12{% elif attr.field_type == 'CuttingSaw' %}col-12{% elif attr.field_type == 'CuttingAround' %}col-12 {% else %}col-md-4 mb-3{% endif %}">
             <label for="attr_{{ attr.id }}" class="form-label text-end d-block fw-bold">
-                {{ attr.label }}
+                {{ attr.label }} :
                 {% if attr.required %}
                     <span class="text-danger">*</span>
                 {% endif %}
@@ -673,10 +683,23 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                         <ul class="list-group mb-3">
                             {% for item in cutting_saw_items %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
-                                طول  {{ item.length }} ×  عزض {{ item.width }}  - تعداد: {{ item.quantity }}
+                                طول  {{ item.length }} ×  عرض {{ item.width }}  - تعداد: {{ item.quantity }}  
+                                
                                 {% if item.description %}
                                     <span class="badge bg-secondary">{{ item.description }}</span>
                                 {% endif %}
+
+                                {% if step.order > 5  %}
+                                 قیمت فروش :     
+                                <input type="text" id="attr_{{ attr.id }}_sell_price_{{item.id}}" name="attr_{{ attr.id }}_sell_price_{{item.id}}" class="form-control price-field " autocomplete="off"  value="{{ item.sell_price }}" >
+                                    <!-- نمایش قیمت به حروف -->
+                                    <div id="price_text_{{ attr.id }}" class="text-muted mt-1" style="direction: rtl; text-align: right;"></div>
+                                 قیمت تولید: 
+                                    <input type ="text" id="attr_{{ attr.id }}_production_price_{{item.id}}" name="attr_{{ attr.id }}_production_price_{{item.id}}" class="form-control price-field  " autocomplete="off"  value="{{ item.production_price }}" >
+                                    <!-- نمایش قیمت به حروف -->
+                                    <div id="price_text_{{ attr.id }}" class="text-muted mt-1" style="direction: rtl; text-align: right;"></div>
+                                {% endif %}
+
                             </li>
                             {% empty %}
                             <li class="list-group-item">هیچ برشی ثبت نشده است.</li>
@@ -685,6 +708,8 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                     </div>
 
                     <hr>
+
+                    {% if step.order < 5 %}
 
                     <div id="cutting-saw-container">
                         <div class="row cutting-saw-row g-2 mb-2">
@@ -700,6 +725,16 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                             <div class="col">
                                 <input type="text" name="cutting_description[]" class="form-control" placeholder="توضیحات (اختیاری)">
                             </div>
+                            {% if step.order > 5  %}
+                            <div class="col">
+                                <input type="number" name="cutting_sell_price[]" class="form-control" placeholder="قیمت فروش">
+                            </div>
+
+                            <div class="col">
+                                <input type="number" name="cutting_production_price[]" class="form-control" placeholder="قیمت تولیدی">
+                            </div>
+                            {% endif %}
+
                             <div class="col-auto">
                                 <button type="button" class="btn btn-danger remove-row">✖</button>
                             </div>
@@ -709,6 +744,9 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                     <div class="text-end">
                         <button type="button" class="btn btn-success btn-sm" id="add-cutting-row">➕ افزودن ردیف</button>
                     </div>
+
+                    {% endif %}
+
 
                     <!-- Hidden to keep attribute tracking -->
                     <input type="hidden" name="attr_{{ attr.id }}" value="cutting_saw_added">
@@ -784,6 +822,9 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                     <input type="file" class="form-control" name="attr_{{ attr.id }}" accept="image/*" {% if attr.required %}required{% endif %}>
                     <input type="hidden" name="existing_image_{{ attr.id }}" value="{{ value }}">
 
+                {% elif attr.field_type == 'show_attr' %}
+                
+                    <input type="text" class="form-control text-end" value="{{ attr.value }}" disabled>
 
 
                 {% else %}

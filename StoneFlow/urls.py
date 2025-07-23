@@ -1,7 +1,7 @@
 from django.urls import path
 
 
-from .views import  approve_delete_request, create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, cutting_factory_create_view, cutting_factory_delete_view, cutting_factory_edit_view, cutting_factory_view, delete_driver_view, delete_group, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, price_attribute_list, register_driver, reject_delete_request, request_delete_coop, review_delete_requests, show_preinvoce_result, steps_list
+from .views import  approve_delete_request, create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, cutting_factory_create_view, cutting_factory_delete_view, cutting_factory_edit_view, cutting_factory_view, delete_driver_view, delete_group, delete_preinvoice, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, preinvoice_detail, price_attribute_list, register_driver, reject_delete_request, request_delete_coop, review_delete_requests, sell_preinvoice, show_preinvoce_result, steps_list, user_preinvoices
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -31,7 +31,6 @@ urlpatterns = [
     path('admin/coop-attributes/', manage_coop_attributes, name='manage_coop_attributes'),
     path('admin/manage_access/', manage_access, name='manage_access'),
 
-    path('<str:url_name>/<int:order_id>/', dynamic_step_view, name='dynamic_step'),
 
 
     # urls.py
@@ -51,9 +50,10 @@ urlpatterns = [
     path('preInvoice/', create_preinvoice_view, name='driver_list'),
     path('preinvoice/preview/<str:filename>/', show_preinvoce_result, name='preview_preinvoice'),
     path('create-english-invoice/', create_english_invoice, name='create_english_invoice'),
-    
-
-
+    path('preinvoices_list/', user_preinvoices, name='user_preinvoices'),
+    path('preinvoice_delete/delete/<int:pk>/', delete_preinvoice, name='delete_preinvoice'),
+    path('preinvoice_sell/sell/<int:pk>/', sell_preinvoice, name='sell_preinvoice'),
+    path('preinvoice_detail/<int:pk>/', preinvoice_detail, name='preinvoice_detaaaail'),
 
     path('admin/cutting_factory/', cutting_factory_view, name='cutting_factory_list'),
     path('admin/cutting_factory/create/', cutting_factory_create_view, name='cutting_factory_create'),
@@ -61,6 +61,7 @@ urlpatterns = [
     path('admin/cutting_factory/delete/<int:pk>/', cutting_factory_delete_view, name='cutting_factory_delete'),
     path('admin/price-attributes/', price_attribute_list, name='price_attribute_list'),
 
+    path('<str:url_name>/<int:order_id>/', dynamic_step_view, name='dynamic_step'),
 
 
 

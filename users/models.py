@@ -18,12 +18,27 @@ except AttributeError:
     RESAMPLING = Image.ANTIALIAS  # برای نسخه‌های قدیمی‌تر Pillow
 
 
+
+# آیتم قابل نمایش در منو (مثلاً کوپ‌ها، داشبورد و غیره)
+class MenuItem(models.Model):
+    title = models.CharField(max_length=100, verbose_name="عنوان آیتم")
+    icon = models.CharField(max_length=100, blank=True, verbose_name="آیکون (کلاس FontAwesome)")
+    url = models.CharField(max_length=200, verbose_name="آدرس URL")
+    order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+
+    def __str__(self):
+        return self.title
+
+
 class jobs(models.Model):
     name = models.CharField(max_length=200)
     persian_name = models.CharField(max_length=200)
     short_name = models.CharField(max_length=3,unique=True)
     describe = models.CharField(max_length=800)
     level = models.IntegerField()
+
+    items = models.ManyToManyField(MenuItem, blank=True, related_name="roles", verbose_name="دسترسی به آیتم‌ها",null=True)  # 👈 این خط را اضافه کن
+
 
     def __str__(self):
         return str(self.name)
@@ -63,15 +78,16 @@ class DailyReports(models.Model):
 # Extending User Model Using a One-To-One Link
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    first_name = models.TextField(max_length=100,blank=True)
-    last_name = models.TextField(max_length=100,blank=True)
-    phone = PhoneNumberField(null=True, blank=True, unique=True)
+    first_name = models.TextField(max_length=100,blank=True,null=True)
+    last_name = models.TextField(max_length=100,blank=True,null=True)
+    phone = models.BigIntegerField(blank=True,null=True,verbose_name='شماره تماس')
     address = models.TextField(max_length=300,blank=True,null=True)
 
     avatar = models.ImageField(default='default.jpg', upload_to='profile_images')
-    bio = models.TextField()
+    bio = models.TextField(blank=True,null=True)
     # job_position = models.CharField(max_length=400)
-    job_position = models.ForeignKey(jobs, on_delete= models.CASCADE,related_name='job_position',default=1,blank=True,null=True)
+    job_position = models.ForeignKey(jobs, on_delete= models.CASCADE,related_name='profile_job_position',blank=True,null=True)
+    # job_position = models.TextField(max_length=300,blank=True,null=True)
 
     # فیلدهای مربوط به پوش نوتیفیکیشن
     push_endpoint = models.TextField(blank=True, null=True)
@@ -774,3 +790,14 @@ class RemainingMaterialsUsage(models.Model):
 
 
 
+
+
+
+
+# اختصاص نقش به کاربر
+class UserRole(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="کاربر")
+    role = models.ForeignKey(jobs, on_delete=models.CASCADE, verbose_name="نقش")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.role.name}"
