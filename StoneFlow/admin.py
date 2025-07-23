@@ -3,7 +3,7 @@ from django.contrib import admin
 # Register your models here.
 # Register your models here.
 
-from .models import CoopAttribute, CoopStateHistory, CuttingSaw, coops , CarModel , CoopAttributeValue,Step,StepAccess
+from .models import CoopAttribute, CoopStateHistory, CuttingSaw, PreInvoiceItem, coops , CarModel , CoopAttributeValue,Step,StepAccess
 
 
 
@@ -23,6 +23,7 @@ admin.site.register(CarModel)
 admin.site.register(Step)
 admin.site.register(StepAccess)
 admin.site.register(CuttingSaw)
+admin.site.register(PreInvoiceItem)
 
 
 
