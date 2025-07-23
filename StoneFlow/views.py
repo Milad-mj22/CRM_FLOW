@@ -39,6 +39,11 @@ import base64
 from django.contrib.auth.decorators import user_passes_test
 
 
+from openpyxl.styles import Font, Alignment
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+
+
 
 def get_allowed_confirm_users(stepNumber:int,user):
 
@@ -1190,11 +1195,6 @@ def show_preinvoce_result(request,filename):
     return render(request, 'preinvoice_result.html', context)
 
 
-from openpyxl.styles import Font, Alignment
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-
-
 
 @csrf_exempt  # optional, only if CSRF becomes a problem with external posts
 def create_english_invoice(request):
@@ -1459,5 +1459,5 @@ def reject_delete_request(request, coop_id):
     messages.info(request, "درخواست حذف رد شد.")
     return redirect('review_delete_requests')
 
-
+ 
 
