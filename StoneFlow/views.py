@@ -38,16 +38,13 @@ from io import BytesIO
 import base64
 from django.contrib.auth.decorators import user_passes_test
 
-<<<<<<< HEAD
 
 from openpyxl.styles import Font, Alignment
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
-=======
 from django.db.models import OuterRef, Subquery, DateTimeField, IntegerField
->>>>>>> 30e0d4418257bdbf8d800f4019771d187d6366b5
 
 def get_allowed_confirm_users(stepNumber:int,user):
 
