@@ -559,7 +559,7 @@ class Buyer(models.Model):
         ('unknown', 'اطلاع ندارم'),
     ]
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    # user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     first_name = models.CharField(max_length=100, verbose_name='نام ')
     last_name = models.CharField(max_length=100, verbose_name='نام نام خانوادگی', null=True, blank=True)
     gender = models.CharField(

@@ -80,7 +80,8 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'StoneFlow',
     'mines',
-    'dashboard'
+    'dashboard',
+    'utils',
 
 ]
 
