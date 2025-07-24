@@ -318,7 +318,7 @@ def profile(request):
 
 
 # @login_required
-@job_required(['Manager', 'Admin','Programmer'])
+@job_required(['Manager', 'Admin','Programmer','CEO'])
 def tools(request):
     queryset = Tools.objects.all().order_by('-title').reverse()
     print('queryset',queryset)

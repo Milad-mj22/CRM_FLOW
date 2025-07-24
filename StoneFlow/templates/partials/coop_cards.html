@@ -1,5 +1,6 @@
 {# partials/coop_cards.html #}
 {% load static %}
+{% load custom_filters %}
 
 {% for coop in coops %}
         <div class="col">
@@ -16,7 +17,7 @@
                     <p class="card-text mb-1"><strong>وضعیت:</strong> <span class="badge bg-secondary">{{ coop.state }}</span></p>
                     <p class="card-text mb-1"><strong>کاربر:</strong> {{ coop.user.username }}</p>
                     <p class="card-text mb-1"><strong>مقدار:</strong> {{ coop.quantity }}</p>
-                    <p class="card-text text-muted"><small><i class="bi bi-clock"></i> {{ coop.submitted_at|date:"Y-m-d H:i" }}</small></p>
+                    <p class="card-text text-muted"><small><i class="bi bi-clock"></i> تاریخ ایجاد : {{ coop.submitted_at|to_jalali  }}</small></p>
                     <a href="{% url 'coop_detail' coop.id %}" class="btn btn-sm btn-outline-primary mt-2 w-100">
                         مشاهده جزئیات <i class="bi bi-arrow-left-short"></i>
                     </a>

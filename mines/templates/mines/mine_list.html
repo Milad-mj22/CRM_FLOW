@@ -52,6 +52,7 @@
                 <div class="card-body">
                     <h5 class="card-title"><i class="bi bi-geo-alt-fill me-1"></i> {{ mine.name }}</h5>
                     <p class="card-text"><strong>موقعیت:</strong> {{ mine.location }}</p>
+                    <p class="card-text"><strong>نوع:</strong> {{ mine.mine_type }}</p>
                     <p class="card-text text-muted">{{ mine.description|truncatewords:15 }}</p>
                     <div class="d-flex justify-content-between mt-3">
                         <a href="{% url 'edit_mine' mine.id %}" class="btn btn-outline-primary btn-sm">

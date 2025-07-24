@@ -7,6 +7,7 @@
 <script src="{% static 'js/jquery-3.5.1.slim.min.js' %}"></script>
 <script src="{% static 'js/persian.date.js' %}"></script>
 <script src="{% static 'js/persian.datepicker.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 
 <style>
   body {
@@ -110,6 +111,8 @@
           <a href="/SocialApps/WA/{{ user.id }}/"><i class="fab fa-whatsapp"></i> اتصال واتساپ</a>
           <a href="/SocialApps/TE/{{ user.id }}/"><i class="fab fa-telegram"></i> اتصال تلگرام</a>
           <a href="/buyers/add/"><i class="fas fa-user-plus"></i> افزودن مشتری</a>
+          <a href="/utils/import-buyers-csv"><i class="fas fa-box me-2"></i> افزودن مشتری از طریق فایل</a> 
+
           <a href="/buyers/"><i class="fas fa-users"></i> لیست مشتریان</a>
           <a href="/stone_flow/preInvoice/"><i class="fas fa-users"></i>ایجاد پیش فاکتور</a>
           <a href="/stone_flow/preinvoices_list/"><i class="fas fa-users"></i> پیش فاکتور های صادرشده</a>

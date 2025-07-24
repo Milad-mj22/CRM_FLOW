@@ -40,6 +40,7 @@ urlpatterns = [
      path('formApp/', include('formApp.urls')),  # ← add this line
      path('mines/', include('mines.urls')),
      path('dashboard/', include('dashboard.urls')),
+     path('utils/', include('utils.urls')),
 
      path('', include('users.urls')),
 

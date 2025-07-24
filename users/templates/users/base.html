@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/all.min.js' %}">
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 
 
   <link rel="icon" href="{% static 'icons/logo.png' %}" type="image/x-icon" />
@@ -198,7 +199,8 @@
         <a href="/profile/store"><i class="fas fa-box-open me-2"></i> موجودی</a>
         <a href="/profile/store_log"><i class="fas fa-history me-2"></i> تاریخچه</a>
         <a href="/profile/create_material"><i class="fas fa-box me-2"></i> تعریف کالای جدید</a> 
-      {% endif %}
+   
+        {% endif %}
     <hr>
     <a href="/login/"><i class="fas fa-sign-out-alt me-2"></i> خروج</a>
     {% else %}
@@ -216,6 +218,7 @@
     {% block content %}
     <!-- محتوای صفحه شما -->
     {% endblock content %}
+
   </div>
 
   <!-- Scripts -->
@@ -223,5 +226,7 @@
   <script src="{% static 'js/popper.min.js' %}"></script>
   <script src="{% static 'js/bootstrap.min.js' %}"></script>
   <script src="{% static 'js/all.min.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+
 </body>
 </html>
