@@ -238,13 +238,12 @@ def create_coope(request):
         data = dict(request.POST.dict())
         data.pop('csrfmiddlewaretoken', None)
 
-        image = None
-        image_data = request.POST.get('image_data')
-        if image_data:
-            format, imgstr = image_data.split(';base64,')
-            ext = format.split('/')[-1]
-            image = ContentFile(base64.b64decode(imgstr), name='captured_image.' + ext)
-            data.pop('image_data', None)
+        # image_data = request.POST.get('image_data')
+        # if image_data:
+        #     format, imgstr = image_data.split(';base64,')
+        #     ext = format.split('/')[-1]
+        #     image = ContentFile(base64.b64decode(imgstr), name='captured_image.' + ext)
+        #     data.pop('image_data', None)
 
         mine_id = request.POST.get('mine_id')
         if not mine_id:
@@ -268,6 +267,19 @@ def create_coope(request):
 
         step = Step.objects.filter(order = 1).first()
 
+
+        attributes = CoopAttribute.objects.filter(step=step)
+        final_image = None
+        
+        for attr in attributes:
+            field_name = f'attr_{attr.id}'
+            if attr.field_type == 'image':
+                images = request.POST.getlist(field_name)
+                if isinstance(images,list):
+                    for image in images:
+                        if image!='':
+                            final_image = image
+
         # ثبت مواد خام
         for field, value in data.items():
             try:
@@ -279,7 +291,7 @@ def create_coope(request):
                         material=raw_material_obj,
                         quantity=Decimal(value),
                         state=step,
-                        image=image
+                        image=final_image
                     )
                     coop_record.set_changed_by(request.user)
                     coop_record.save()
@@ -869,8 +881,7 @@ from django.urls import reverse
 @login_required
 def manage_coop_attributes(request):
     form = CoopAttributeForm()
-    attributes = CoopAttribute.objects.all()
-
+    attributes = CoopAttribute.objects.all().order_by('step__order')
     if request.method == 'POST':
         if 'edit_id' in request.POST:
             attr = get_object_or_404(CoopAttribute, id=request.POST['edit_id'])
@@ -896,6 +907,7 @@ def manage_coop_attributes(request):
                 messages.error(request, ' نام ویژگی تکراری است یا فرم کامل پرنشده است.', extra_tags='create_coop_feature_error')
 
     show_attr_items = CoopAttributeValue.objects.all()
+    
 
 
 
@@ -1468,14 +1480,14 @@ def calculate_total_price(coop):
 
 def price_attribute_list(request):
     # گرفتن تمام CoopAttribute های نوع 'price'
-    price_attrs = CoopAttribute.objects.filter(field_type='price').order_by('label')
+    price_attrs = CoopAttribute.objects.filter(field_type='price').order_by('step__order')
 
     # اطمینان از وجود PriceAttribute برای همه‌ی اینها، در صورت نبود بساز
     for attr in price_attrs:
         PriceAttribute.objects.get_or_create(attribute=attr)
 
     # گرفتن PriceAttributeهای مربوطه
-    price_attrs_with_multiplier = PriceAttribute.objects.filter(attribute__in=price_attrs).select_related('attribute')
+    price_attrs_with_multiplier = PriceAttribute.objects.filter(attribute__in=price_attrs).select_related('attribute').order_by('attribute__step__order')
 
     if request.method == 'POST':
         # پردازش فرم
