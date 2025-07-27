@@ -259,8 +259,8 @@ class CuttingSaw(models.Model):
     quantity = models.PositiveIntegerField(verbose_name="تعداد")
     description = models.CharField(max_length=1000, verbose_name="توضیحات", blank=True)
 
-    value = models.CharField(max_length=5000 ,  blank=True, null=True,verbose_name="تصویر")
-
+    image = models.ImageField(upload_to='cuttingSaw/', blank=True, null=True)  # Added field for image
+    
 
     is_active = models.BooleanField(default=True)
     is_sell = models.BooleanField(default=False)

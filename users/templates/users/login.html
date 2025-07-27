@@ -68,6 +68,15 @@
         <div class="col-md-6 col-lg-5">
             <div class="login-card">
                 <h4 class="text-center mb-4">👤 ورود به حساب کاربری</h4>
+                {% if messages %}
+                    {% for message in messages %}
+                    
+                        <div class="alert alert-{{ message.tags }}" style="text-align: right; display: block;">
+                        {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
 
                 {% if form.errors %}
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">

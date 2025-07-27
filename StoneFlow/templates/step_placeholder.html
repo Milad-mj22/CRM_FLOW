@@ -52,10 +52,14 @@
 </script>
 
 <script>
+    let cuttingRowIndex = 0;
+
     $(document).ready(function () {
         $('#add-cutting-row').click(function () {
+            cuttingRowIndex++;
+
             const row = `
-            <div class="row cutting-saw-row g-2 mb-2">
+            <div class="row cutting-saw-row g-2 mb-2" data-index="${cuttingRowIndex}">
                 <div class="col">
                     <input type="number" step="any" name="cutting_length[]" class="form-control" placeholder="طول">
                 </div>
@@ -69,10 +73,15 @@
                     <input type="text" name="cutting_description[]" class="form-control" placeholder="توضیحات (اختیاری)">
                 </div>
                 <div class="col">
-                    <input type="text" name="cutting_image[]" class="form-control" placeholder="توضیحات (اختیاری)">
+                    <div class="mt-2">
+                    <input type="hidden" name="cutting_image[]" id="cutting_image_${cuttingRowIndex}">
+
+
+                    <video id="video_${cuttingRowIndex}" width="320" height="240" autoplay muted style="display:none; border:1px solid #ccc; border-radius:8px;"></video>
+                    <canvas id="canvas_${cuttingRowIndex}" width="160" height="120" style="display: none; border: 1px solid #ccc;"></canvas>
+                    <button type="button" class="btn btn-outline-primary btn-sm mt-2 camera-btn" style="text-align: right; display: block;" data-index="${cuttingRowIndex}">باز کردن دوربین</button>
+                    </div>
                 </div>
-
-
                 <div class="col-auto">
                     <button type="button" class="btn btn-danger remove-row">✖</button>
                 </div>
@@ -80,8 +89,49 @@
             $('#cutting-saw-container').append(row);
         });
 
+        // حذف ردیف
         $(document).on('click', '.remove-row', function () {
             $(this).closest('.cutting-saw-row').remove();
+        });
+
+        // مدیریت دوربین و گرفتن عکس
+        $(document).on('click', '.camera-btn', async function () {
+            const index = $(this).data('index');
+            const video = document.getElementById(`video_${index}`);
+            const canvas = document.getElementById(`canvas_${index}`);
+            const input = document.getElementById(`cutting_image_${index}`);
+            let button = this;
+
+            // اگر دوربین روشن نیست، روشن کن
+            if (video.style.display === 'none') {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
+                    video.dataset.streamId = stream.id;
+                    video.style.display = 'block';
+                    canvas.style.display = 'none';
+                    button.textContent = 'گرفتن عکس';
+                } catch (err) {
+                    alert('خطا در دسترسی به دوربین: ' + err.message);
+                }
+            } else {
+                // عکس بگیر و ذخیره کن
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.style.display = 'block';
+                video.style.display = 'none';
+
+                // قطع دوربین
+                const stream = video.srcObject;
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+
+                const dataURL = canvas.toDataURL('image/png');
+                input.value = dataURL;
+                button.textContent = 'باز کردن دوربین';
+            }
         });
     });
 </script>
@@ -683,6 +733,37 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                                 {% if item.description %}
                                     <span class="badge bg-secondary">{{ item.description }}</span>
                                 {% endif %}
+                                
+
+                                {% if item.image %}
+                                <button type="button" class="btn btn-info btn-sm mt-2 show-image-btn" 
+                                    data-image-src="{{ item.image }}" 
+                                    data-download-href="{{ item.image }}">
+                                    نمایش تصویر
+                                </button>
+                                <!-- Image Preview Modal -->
+                                <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="imagePreviewModalLabel">تصویر</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img id="modalImage" src="" alt="تصویر" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+                                    </div>
+                                    <div class="modal-footer">
+                                        <a id="downloadBtn" href="" download class="btn btn-success">دانلود</a>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                                    </div>
+                                    </div>
+                                </div>
+                                </div>
+                                {% else %}
+                                    <span class="text-danger">تصویری وجود ندارد.</span>
+
+                                {% endif %}
+
 
 
 
@@ -713,7 +794,7 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                             <div class="col">
                                 <!-- <input type="text" name="cutting_image[]" class="form-control" placeholder="توضیحات (اختیاری)"> -->
                                 <!-- <button type="button" id="cutting_image_{{ attr.id }}" class="btn btn-outline-primary btn-sm mt-2" style="text-align: right; display: block;">تصویر</button> -->
-                        <button type="button" id="cameraBtn_{{ attr.id }}" class="btn btn-outline-primary btn-sm mt-2" style="text-align: right; display: block;">باز کردن دوربین</button>
+                                    <button type="button" id="cameraBtn_{{ attr.id }}" class="btn btn-outline-primary btn-sm mt-2" style="text-align: right; display: block;">باز کردن دوربین</button>
 
                                 <!-- ویدئو و canvas برای گرفتن عکس -->
                                 <div class="mt-2">
@@ -723,10 +804,6 @@ document.querySelectorAll('.price-field').forEach(function(input) {
 
                                 <!-- فیلد مخفی برای ارسال عکس -->
                                 <input type="hidden" id="attr_{{ attr.id }}" name="cutting_image[]">
-                                <input type="hidden" name="cutting_image[]" value="{{ value }}">
-
-
-
 
 
                             </div>
@@ -878,8 +955,42 @@ document.querySelectorAll('.price-field').forEach(function(input) {
 </div>
 
 </body>
+<script>
+  document.querySelectorAll('.toggle-image-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const container = button.nextElementSibling;
+      if (container.style.display === 'none' || container.style.display === '') {
+        container.style.display = 'block';
+        button.textContent = 'پنهان کردن تصویر';
+      } else {
+        container.style.display = 'none';
+        button.textContent = 'نمایش تصویر';
+      }
+    });
+  });
+</script>
 
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+  const modalImage = document.getElementById('modalImage');
+  const downloadBtn = document.getElementById('downloadBtn');
+
+  document.querySelectorAll('.show-image-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const imgSrc = button.getAttribute('data-image-src');
+      const downloadHref = button.getAttribute('data-download-href');
+
+      modalImage.src = imgSrc;
+      downloadBtn.href = downloadHref;
+
+      modal.show();
+    });
+  });
+});
+
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

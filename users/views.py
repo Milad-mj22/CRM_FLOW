@@ -61,6 +61,7 @@ from .models import Buyer, InventoryLog
 from .forms import BuyerLoginForm
 from .forms import UserForm, ProfileForm
 
+from django.core.exceptions import ObjectDoesNotExist
 
 
 from .models import DailyReports , ReportTitles
@@ -255,21 +256,67 @@ def save_subscription(request):
         
 # Class based view that extends from the built in login view to add a remember me functionality
 
+# class CustomLoginView(LoginView):
+#     form_class = LoginForm
+
+#     def form_valid(self, form):
+#         remember_me = form.cleaned_data.get('remember_me')
+
+#         if not remember_me:
+#             # set session expiry to 0 seconds. So it will automatically close the session after the browser is closed.
+#             self.request.session.set_expiry(0)
+
+#             # Set session as modified to force data updates/cookie to be saved.
+#             self.request.session.modified = True
+
+#         # else browser session will be as long as the session cookie time "SESSION_COOKIE_AGE" defined in settings.py
+#         return super(CustomLoginView, self).form_valid(form)
+
+
+
 class CustomLoginView(LoginView):
     form_class = LoginForm
 
     def form_valid(self, form):
         remember_me = form.cleaned_data.get('remember_me')
 
-        if not remember_me:
-            # set session expiry to 0 seconds. So it will automatically close the session after the browser is closed.
-            self.request.session.set_expiry(0)
+        username = form.cleaned_data.get('username')
 
-            # Set session as modified to force data updates/cookie to be saved.
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            messages.error(self.request, 'کاربری با این نام وجود ندارد.')
+            return self.form_invalid(form)
+
+        # Now check if Profile exists for that user
+        try:
+            profile = user.profile
+        except ObjectDoesNotExist:
+            messages.error(self.request, 'پروفایل کاربر یافت نشد.')
+            return self.form_invalid(form)
+
+
+
+        if not remember_me:
+            self.request.session.set_expiry(0)
             self.request.session.modified = True
 
-        # else browser session will be as long as the session cookie time "SESSION_COOKIE_AGE" defined in settings.py
-        return super(CustomLoginView, self).form_valid(form)
+
+
+        # انجام ورود
+        response = super().form_valid(form)
+        # بررسی اینکه آیا پروفایل وجود دارد یا نه
+        try:
+            self.request.user.profile
+        except ObjectDoesNotExist:
+            messages.error(self.request, 'پروفایل شما وجود ندارد. لطفاً با مدیر سیستم تماس بگیرید.')
+            return redirect(reverse_lazy('login'))
+
+        return response
+
+
+
+
 
 
 

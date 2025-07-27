@@ -495,7 +495,7 @@ def dynamic_step_view(request, url_name, order_id=None):
                     widths = request.POST.getlist('cutting_width[]')
                     quantities = request.POST.getlist('cutting_quantity[]')
                     descriptions = request.POST.getlist('cutting_description[]')
-                    image = request.POST.getlist('cutting_image[]')
+                    images = request.POST.getlist('cutting_image[]')
 
 
 
@@ -505,6 +505,7 @@ def dynamic_step_view(request, url_name, order_id=None):
                             width = float(widths[i])
                             quantity = int(quantities[i])
                             description = descriptions[i]
+                            image = images[i]
 
                             if length > 0 and width > 0 and quantity > 0:
 
@@ -513,7 +514,8 @@ def dynamic_step_view(request, url_name, order_id=None):
                                                             length=length,
                                                             width=width,
                                                             quantity=quantity,
-                                                            description=description
+                                                            image= image,
+                                                            description=description,
                                                         )
 
 
