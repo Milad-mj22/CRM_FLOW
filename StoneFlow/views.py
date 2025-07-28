@@ -302,7 +302,7 @@ def create_coope(request):
                     coop_record.save()
 
 
-                    ret = add_material2warehouse(user=request.user.profile,value=Decimal(value),raw_material_instance=raw_material_obj,warehouse_name=DEFULT_WARE_HOUSE_CREATE_COOP)
+                    ret = add_material2warehouse(user=request.user.profile,value=Decimal(value),raw_material_instance=raw_material_obj,warehouse_name=DEFULT_WARE_HOUSE_CREATE_COOP,coop=coop_record)
                     if not ret:
                         return render(request, 'flow_error_page.html', {'text': "خطا در ذخیره سنگ در انبار"})
 
@@ -363,7 +363,8 @@ def create_coope(request):
                 )
 
         messages.success(request, "مقادیر با موفقیت ثبت شدند.")
-        return render(request, 'success_page.html', {'content': 'حواله جدید با موفقیت ثبت گردید'})
+        return render(request, 'success_page.html', {'content': f'{step.title} با موفقیت ثبت گردید','order_id':coop_record.id})
+
 
         # except Exception as e:
         #     print('❌ خطا در ثبت اطلاعات:', e)
@@ -657,10 +658,21 @@ def dynamic_step_view(request, url_name, order_id=None):
                             except ValueError:
                                 continue  # اگر مقدار نامعتبر بود هم ذخیره نکن
 
+                        elif attr.field_type =='Cutting_factory':
+                            warehouse = Warehouse.objects.filter(name = DEFULT_WARE_HOUSE_CREATE_COOP).first()
+
+                            try:
+                                inventory = Inventory.objects.get(inventory_raw_material=coop_record.material,warehouse=warehouse)
+                                inventory.coop_remove(coop=coop_record,amount=Decimal(coop_record.quantity),user=request.user.profile)
+
+                                # You can now use `inventory`
+                            except Inventory.DoesNotExist:
+                                inventory = None  # or handle the case appropriately
+
 
 
                         # ✅ اگر نوع فیلد date بود، تبدیل شمسی به میلادی
-                        if attr.field_type == 'date':
+                        elif attr.field_type == 'date':
                             try:
                                 # انتظار داریم فرمت دریافتی شمسی مثل "1403/04/23" باشد
                                 jalali_parts = value.split('/')
@@ -1643,7 +1655,7 @@ def preinvoice_detail(request, pk):
 
 
 
-def add_material2warehouse(user:Profile,value:float,raw_material_instance:raw_material=None,raw_material_name:str='',warehouse_instance=None,warehouse_name:str=''):
+def add_material2warehouse(user:Profile,value:float,raw_material_instance:raw_material=None,raw_material_name:str='',warehouse_instance=None,warehouse_name:str='',coop=None):
     try:
         from django.utils.timezone import now
         if raw_material_instance is None and raw_material_name != '':
@@ -1660,7 +1672,7 @@ def add_material2warehouse(user:Profile,value:float,raw_material_instance:raw_ma
             warehouse=warehouse_instance
         )
 
-        inventory.add_stock(amount=value, user=user, receipt_number='1')
+        inventory.add_stock(amount=value, user=user, receipt_number='1',coop=coop)
         return True
 
     except Exception as e:

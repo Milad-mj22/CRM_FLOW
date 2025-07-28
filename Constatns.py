@@ -1,2 +1,2 @@
 class Constants:
-    NAME = 'کارخانه سنگ KBC'
+    NAME = 'کارخانه سنگ KMC'
