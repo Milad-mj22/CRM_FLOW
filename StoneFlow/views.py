@@ -694,7 +694,7 @@ def dynamic_step_view(request, url_name, order_id=None):
 
             steps = Step.objects.order_by('order')  # مرتب‌سازی مراحل
             stepNumber =step.order
-            attributes = CoopAttribute.objects.filter(step=step.order)
+            attributes = CoopAttribute.objects.filter(step=step)
 
             mother_materials = mother_material.objects.prefetch_related('mother_material').order_by('describe').all()
 
