@@ -191,7 +191,7 @@ class CoopDeleteRequest(models.Model):
 class CoopAttributeValue(models.Model):
     coop = models.ForeignKey(coops, on_delete=models.CASCADE, related_name='attribute_values')
     attribute = models.ForeignKey(CoopAttribute, on_delete=models.CASCADE)
-    value = models.CharField(max_length=500)
+    value = models.CharField(max_length=5000)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='CoopAttributeValue_submissions')
 
     created_at = models.DateTimeField(auto_now_add=True)  # تاریخ و زمان ایجاد خودکار
@@ -259,11 +259,8 @@ class CuttingSaw(models.Model):
     quantity = models.PositiveIntegerField(verbose_name="تعداد")
     description = models.CharField(max_length=1000, verbose_name="توضیحات", blank=True)
 
-    image = models.ImageField(upload_to='Stone/', blank=True, null=True,verbose_name="تصویر")  # Added field for image
-    sell_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت فروش",blank=True,null=True,default=0)
-    production_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت تولیدی",blank=True,null=True,default=0)
-
-
+    image = models.ImageField(upload_to='cuttingSaw/', blank=True, null=True)  # Added field for image
+    
 
     is_active = models.BooleanField(default=True)
     is_sell = models.BooleanField(default=False)

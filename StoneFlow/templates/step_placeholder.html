@@ -52,10 +52,14 @@
 </script>
 
 <script>
+    let cuttingRowIndex = 0;
+
     $(document).ready(function () {
         $('#add-cutting-row').click(function () {
+            cuttingRowIndex++;
+
             const row = `
-            <div class="row cutting-saw-row g-2 mb-2">
+            <div class="row cutting-saw-row g-2 mb-2" data-index="${cuttingRowIndex}">
                 <div class="col">
                     <input type="number" step="any" name="cutting_length[]" class="form-control" placeholder="طول">
                 </div>
@@ -68,16 +72,16 @@
                 <div class="col">
                     <input type="text" name="cutting_description[]" class="form-control" placeholder="توضیحات (اختیاری)">
                 </div>
-                {% if step.order > 5 %}
                 <div class="col">
-                    <input type="number" name="cutting_sell_price[]" class="form-control" placeholder="قیمت فروش">
-                </div>
-                <div class="col">
-                    <input type="number" name="cutting_production_price[]" class="form-control" placeholder="قیمت تولیدی">
-                </div>
-                {% endif %}
+                    <div class="mt-2">
+                    <input type="hidden" name="cutting_image[]" id="cutting_image_${cuttingRowIndex}">
 
 
+                    <video id="video_${cuttingRowIndex}" width="320" height="240" autoplay muted style="display:none; border:1px solid #ccc; border-radius:8px;"></video>
+                    <canvas id="canvas_${cuttingRowIndex}" width="160" height="120" style="display: none; border: 1px solid #ccc;"></canvas>
+                    <button type="button" class="btn btn-outline-primary btn-sm mt-2 camera-btn" style="text-align: right; display: block;" data-index="${cuttingRowIndex}">باز کردن دوربین</button>
+                    </div>
+                </div>
                 <div class="col-auto">
                     <button type="button" class="btn btn-danger remove-row">✖</button>
                 </div>
@@ -85,8 +89,49 @@
             $('#cutting-saw-container').append(row);
         });
 
+        // حذف ردیف
         $(document).on('click', '.remove-row', function () {
             $(this).closest('.cutting-saw-row').remove();
+        });
+
+        // مدیریت دوربین و گرفتن عکس
+        $(document).on('click', '.camera-btn', async function () {
+            const index = $(this).data('index');
+            const video = document.getElementById(`video_${index}`);
+            const canvas = document.getElementById(`canvas_${index}`);
+            const input = document.getElementById(`cutting_image_${index}`);
+            let button = this;
+
+            // اگر دوربین روشن نیست، روشن کن
+            if (video.style.display === 'none') {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
+                    video.dataset.streamId = stream.id;
+                    video.style.display = 'block';
+                    canvas.style.display = 'none';
+                    button.textContent = 'گرفتن عکس';
+                } catch (err) {
+                    alert('خطا در دسترسی به دوربین: ' + err.message);
+                }
+            } else {
+                // عکس بگیر و ذخیره کن
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.style.display = 'block';
+                video.style.display = 'none';
+
+                // قطع دوربین
+                const stream = video.srcObject;
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+
+                const dataURL = canvas.toDataURL('image/png');
+                input.value = dataURL;
+                button.textContent = 'باز کردن دوربین';
+            }
         });
     });
 </script>
@@ -688,28 +733,49 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                                 {% if item.description %}
                                     <span class="badge bg-secondary">{{ item.description }}</span>
                                 {% endif %}
+                                
 
-                                {% if step.order > 5  %}
-                                 قیمت فروش :     
-                                <input type="text" id="attr_{{ attr.id }}_sell_price_{{item.id}}" name="attr_{{ attr.id }}_sell_price_{{item.id}}" class="form-control price-field " autocomplete="off"  value="{{ item.sell_price }}" >
-                                    <!-- نمایش قیمت به حروف -->
-                                    <div id="price_text_{{ attr.id }}" class="text-muted mt-1" style="direction: rtl; text-align: right;"></div>
-                                 قیمت تولید: 
-                                    <input type ="text" id="attr_{{ attr.id }}_production_price_{{item.id}}" name="attr_{{ attr.id }}_production_price_{{item.id}}" class="form-control price-field  " autocomplete="off"  value="{{ item.production_price }}" >
-                                    <!-- نمایش قیمت به حروف -->
-                                    <div id="price_text_{{ attr.id }}" class="text-muted mt-1" style="direction: rtl; text-align: right;"></div>
+                                {% if item.image %}
+                                <button type="button" class="btn btn-info btn-sm mt-2 show-image-btn" 
+                                    data-image-src="{{ item.image }}" 
+                                    data-download-href="{{ item.image }}">
+                                    نمایش تصویر
+                                </button>
+                                <!-- Image Preview Modal -->
+                                <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="imagePreviewModalLabel">تصویر</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img id="modalImage" src="" alt="تصویر" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+                                    </div>
+                                    <div class="modal-footer">
+                                        <a id="downloadBtn" href="" download class="btn btn-success">دانلود</a>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                                    </div>
+                                    </div>
+                                </div>
+                                </div>
+                                {% else %}
+                                    <span class="text-danger">تصویری وجود ندارد.</span>
+
                                 {% endif %}
+
+
+
 
                             </li>
                             {% empty %}
-                            <li class="list-group-item">هیچ برشی ثبت نشده است.</li>
+                            <li class="list-group-item" style="text-align: right; display: block;">هیچ برشی ثبت نشده است.</li>
                             {% endfor %}
                         </ul>
                     </div>
 
                     <hr>
 
-                    {% if step.order < 5 %}
 
                     <div id="cutting-saw-container">
                         <div class="row cutting-saw-row g-2 mb-2">
@@ -725,15 +791,22 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                             <div class="col">
                                 <input type="text" name="cutting_description[]" class="form-control" placeholder="توضیحات (اختیاری)">
                             </div>
-                            {% if step.order > 5  %}
                             <div class="col">
-                                <input type="number" name="cutting_sell_price[]" class="form-control" placeholder="قیمت فروش">
-                            </div>
+                                <!-- <input type="text" name="cutting_image[]" class="form-control" placeholder="توضیحات (اختیاری)"> -->
+                                <!-- <button type="button" id="cutting_image_{{ attr.id }}" class="btn btn-outline-primary btn-sm mt-2" style="text-align: right; display: block;">تصویر</button> -->
+                                    <button type="button" id="cameraBtn_{{ attr.id }}" class="btn btn-outline-primary btn-sm mt-2" style="text-align: right; display: block;">باز کردن دوربین</button>
 
-                            <div class="col">
-                                <input type="number" name="cutting_production_price[]" class="form-control" placeholder="قیمت تولیدی">
+                                <!-- ویدئو و canvas برای گرفتن عکس -->
+                                <div class="mt-2">
+                                    <video id="video_{{ attr.id }}" width="320" height="240" autoplay muted style="display:none; border:1px solid #ccc; border-radius:8px;"></video>
+                                    <canvas id="canvas_{{ attr.id }}" width="320" height="240" style="display:none; border:1px solid #ccc; border-radius:8px;"></canvas>
+                                </div>
+
+                                <!-- فیلد مخفی برای ارسال عکس -->
+                                <input type="hidden" id="attr_{{ attr.id }}" name="cutting_image[]">
+
+
                             </div>
-                            {% endif %}
 
                             <div class="col-auto">
                                 <button type="button" class="btn btn-danger remove-row">✖</button>
@@ -745,7 +818,6 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                         <button type="button" class="btn btn-success btn-sm" id="add-cutting-row">➕ افزودن ردیف</button>
                     </div>
 
-                    {% endif %}
 
 
                     <!-- Hidden to keep attribute tracking -->
@@ -765,7 +837,7 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                                 {% endif %}
                             </li>
                             {% empty %}
-                            <li class="list-group-item">هیچ برش اطرافی ثبت نشده است.</li>
+                            <li class="list-group-item" style="text-align: right; display: block;">هیچ برش اطرافی ثبت نشده است.</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -812,15 +884,33 @@ document.querySelectorAll('.price-field').forEach(function(input) {
                     <div id="price_text_{{ attr.id }}" class="text-muted mt-1" style="direction: rtl; text-align: right;"></div>
 
 
-
                 {% elif attr.field_type == 'image' %}
-                    {% if value %}
-                        <div class="mb-2">
-                            <img src="{{ value.url }}" alt="پیش‌نمایش تصویر" class="img-thumbnail" style="max-height: 150px;">
+                    <div class="form-group mt-2">
+                        <input type="file" id="fileInput_{{ attr.id }}" class="form-control" name="attr_{{ attr.id }}" accept="image/*" {% if attr.required %}required{% endif %}>
+
+                        <!-- دکمه کنترل دوربین -->
+                        <button type="button" id="cameraBtn_{{ attr.id }}" class="btn btn-outline-primary btn-sm mt-2" style="text-align: right; display: block;">باز کردن دوربین</button>
+
+                     
+                        {% if value %}
+                            <div class="mb-2">
+                                <img src="{{ value }}" alt="تصویر" style="max-width: 300px; border: 1px solid #ccc; border-radius: 6px; text-align: right; display: block;" dir="rtl">
+
+                            </div>
+                        {% endif %}
+
+
+                        <!-- ویدئو و canvas برای گرفتن عکس -->
+                        <div class="mt-2">
+                            <video id="video_{{ attr.id }}" width="320" height="240" autoplay muted style="display:none; border:1px solid #ccc; border-radius:8px;"></video>
+                            <canvas id="canvas_{{ attr.id }}" width="320" height="240" style="display:none; border:1px solid #ccc; border-radius:8px;"></canvas>
                         </div>
-                    {% endif %}
-                    <input type="file" class="form-control" name="attr_{{ attr.id }}" accept="image/*" {% if attr.required %}required{% endif %}>
-                    <input type="hidden" name="existing_image_{{ attr.id }}" value="{{ value }}">
+
+                        <!-- فیلد مخفی برای ارسال عکس -->
+                        <input type="hidden" id="attr_{{ attr.id }}" name="attr_{{ attr.id }}">
+                        <input type="hidden" name="existing_image_{{ attr.id }}" value="{{ value }}">
+                    </div>
+
 
                 {% elif attr.field_type == 'show_attr' %}
                 
@@ -865,78 +955,152 @@ document.querySelectorAll('.price-field').forEach(function(input) {
 </div>
 
 </body>
-
-
-    
 <script>
-    const cameraBtn = document.getElementById('cameraBtn');
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const imageInput = document.getElementById('image_data');
-    let stream = null;
-    let cameraOn = false;
-
-    cameraBtn.addEventListener('click', async () => {
-        if (!cameraOn) {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                video.srcObject = stream;
-                video.style.display = 'block';
-                canvas.style.display = 'none';
-                cameraBtn.textContent = 'گرفتن عکس';
-                cameraOn = true;
-            } catch (error) {
-                alert('دسترسی به دوربین ممکن نیست: ' + error);
-            }
-        } else {
-            // گرفتن عکس
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // نمایش عکس و مخفی کردن ویدئو
-            video.style.display = 'none';
-            canvas.style.display = 'block';
-
-            // قطع کردن دوربین
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-
-            cameraBtn.textContent = 'باز کردن دوربین';
-            cameraOn = false;
-
-            // مقدار Base64 عکس را داخل input مخفی قرار بده
-            const imageDataUrl = canvas.toDataURL('image/png');
-            imageInput.value = imageDataUrl;
-
-            console.log('Captured Image Data URL set to hidden input');
-        }
+  document.querySelectorAll('.toggle-image-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const container = button.nextElementSibling;
+      if (container.style.display === 'none' || container.style.display === '') {
+        container.style.display = 'block';
+        button.textContent = 'پنهان کردن تصویر';
+      } else {
+        container.style.display = 'none';
+        button.textContent = 'نمایش تصویر';
+      }
     });
+  });
+</script>
 
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+  const modalImage = document.getElementById('modalImage');
+  const downloadBtn = document.getElementById('downloadBtn');
 
+  document.querySelectorAll('.show-image-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const imgSrc = button.getAttribute('data-image-src');
+      const downloadHref = button.getAttribute('data-download-href');
 
-document.getElementById('full_weight').addEventListener('input', updateNetWeight);
-document.getElementById('empty_weight').addEventListener('input', updateNetWeight);
+      modalImage.src = imgSrc;
+      downloadBtn.href = downloadHref;
 
-function updateNetWeight() {
-    const full = parseFloat(document.getElementById('full_weight').value) || 0;
-    const empty = parseFloat(document.getElementById('empty_weight').value) || 0;
-    const net = full - empty;
-    document.getElementById('net_weight').value = net > 0 ? net.toFixed(1) : 0;
-}
-
-
-
-
-
-
-
-
-
-
+      modal.show();
+    });
+  });
+});
 
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // همه دکمه‌های باز کردن دوربین را انتخاب کن
+    const cameraButtons = document.querySelectorAll('[id^="cameraBtn_"]');
+
+    cameraButtons.forEach(button => {
+        const attrId = button.id.split('_')[1];
+        const video = document.getElementById(`video_${attrId}`);
+        const canvas = document.getElementById(`canvas_${attrId}`);
+        const imageInput = document.getElementById(`attr_${attrId}`);
+        const fileInput = document.getElementById(`fileInput_${attrId}`);
+
+        let stream = null;
+        let cameraOn = false;
+
+        button.addEventListener('click', async () => {
+            if (!cameraOn) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                    canvas.style.display = 'none';
+                    button.textContent = 'گرفتن عکس';
+                    cameraOn = true;
+                } catch (error) {
+                    alert('دسترسی به دوربین ممکن نیست: ' + error);
+                }
+            } else {
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                video.style.display = 'none';
+                canvas.style.display = 'block';
+
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+
+                button.textContent = 'باز کردن دوربین';
+                cameraOn = false;
+
+                const imageDataUrl = canvas.toDataURL('image/png');
+                imageInput.value = imageDataUrl;
+
+                console.log(`Captured image for attr_${attrId}`);
+            }
+        });
+
+        // کنترل انتخاب فایل تصویر
+        if (fileInput) {
+            fileInput.addEventListener('change', () => {
+                const file = fileInput.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Data = e.target.result;
+
+                    // مقدار base64 را در hidden input ذخیره کن
+                    imageInput.value = base64Data;
+
+                    // پیش‌نمایش تصویر را در canvas نمایش بده
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.onload = function() {
+                        // اندازه canvas را به اندازه تصویر تنظیم کن
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        canvas.style.display = 'block';
+                        video.style.display = 'none';
+                    };
+                    img.src = base64Data;
+
+                    // اگر دوربین فعال است، قطعش کن و دکمه را به حالت اولیه برگردان
+                    if (cameraOn) {
+                        stream.getTracks().forEach(track => track.stop());
+                        stream = null;
+                        cameraOn = false;
+                        button.textContent = 'باز کردن دوربین';
+                        video.style.display = 'none';
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    });
+
+    // بخش وزن خالص (همانند قبل)
+    const fullInput = document.getElementById('full_weight');
+    const emptyInput = document.getElementById('empty_weight');
+    const netInput = document.getElementById('net_weight');
+
+    function updateNetWeight() {
+        const full = parseFloat(fullInput.value) || 0;
+        const empty = parseFloat(emptyInput.value) || 0;
+        const net = full - empty;
+        netInput.value = net > 0 ? net.toFixed(1) : 0;
+    }
+
+    if (fullInput && emptyInput && netInput) {
+        fullInput.addEventListener('input', updateNetWeight);
+        emptyInput.addEventListener('input', updateNetWeight);
+    }
+});
+
+</script>
 
 
 {% endblock %}

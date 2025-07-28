@@ -10,7 +10,7 @@ import win32com.client
 
 from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, CoopDeleteRequest, Cutting_factory, CuttingAround, CuttingSaw, PreInvoice, PreInvoiceItem, PriceAttribute
 from django.http import HttpResponseForbidden
-from StoneFlow.models import coops
+from StoneFlow.models import coops , Step
 from mines.models import Mine
 from users.models import Buyer, Profile, Warehouse, mother_material , raw_material
 # Create your views here.
@@ -44,11 +44,12 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 
+
 from django.db.models import OuterRef, Subquery, DateTimeField, IntegerField
 
-def get_allowed_confirm_users(stepNumber:int,user):
+def get_allowed_confirm_users(step:Step,user):
 
-    access = StepAccess.objects.filter(step=stepNumber,user=user)
+    access = StepAccess.objects.filter(step=step,user=user)
 
     allowed_roles = []
 
@@ -76,12 +77,12 @@ def get_allowed_confirm_users(stepNumber:int,user):
 
 
 
-def get_submit_and_confirmed(user,stepNumber):
+def get_submit_and_confirmed(user,step):
         try:
             # user_profile = Profile.objects.get(user=user)
             # user_profile = User.objects.get(user=user)
             # user_role = user_profile.job_position.name
-            can_submit = get_allowed_confirm_users(stepNumber=stepNumber,user=user)
+            can_submit = get_allowed_confirm_users(step=step,user=user)
             # Check if the user has access to submit this step
             # can_submit = user_role in allowed_roles
             # is_confirmed = check_order_confirmed(order=ret,stepNumber=1)
@@ -228,6 +229,7 @@ from django.db import transaction
 @transaction.atomic
 def create_coope(request):
     stepNumber = 1
+    step = Step.objects.filter(order = 1).first()
 
 
     if request.method == 'POST':
@@ -236,13 +238,12 @@ def create_coope(request):
         data = dict(request.POST.dict())
         data.pop('csrfmiddlewaretoken', None)
 
-        image = None
-        image_data = request.POST.get('image_data')
-        if image_data:
-            format, imgstr = image_data.split(';base64,')
-            ext = format.split('/')[-1]
-            image = ContentFile(base64.b64decode(imgstr), name='captured_image.' + ext)
-            data.pop('image_data', None)
+        # image_data = request.POST.get('image_data')
+        # if image_data:
+        #     format, imgstr = image_data.split(';base64,')
+        #     ext = format.split('/')[-1]
+        #     image = ContentFile(base64.b64decode(imgstr), name='captured_image.' + ext)
+        #     data.pop('image_data', None)
 
         mine_id = request.POST.get('mine_id')
         if not mine_id:
@@ -266,6 +267,19 @@ def create_coope(request):
 
         step = Step.objects.filter(order = 1).first()
 
+
+        attributes = CoopAttribute.objects.filter(step=step)
+        final_image = None
+        
+        for attr in attributes:
+            field_name = f'attr_{attr.id}'
+            if attr.field_type == 'image':
+                images = request.POST.getlist(field_name)
+                if isinstance(images,list):
+                    for image in images:
+                        if image!='':
+                            final_image = image
+
         # ثبت مواد خام
         for field, value in data.items():
             try:
@@ -277,7 +291,7 @@ def create_coope(request):
                         material=raw_material_obj,
                         quantity=Decimal(value),
                         state=step,
-                        image=image
+                        image=final_image
                     )
                     coop_record.set_changed_by(request.user)
                     coop_record.save()
@@ -291,10 +305,11 @@ def create_coope(request):
             raise Exception("هیچ کوپی ثبت نشد")
 
         # ثبت ویژگی‌های دینامیک
-        attributes = CoopAttribute.objects.filter(step=stepNumber)
+        attributes = CoopAttribute.objects.filter(step=step)
         for attr in attributes:
             field_name = f'attr_{attr.id}'
             value = request.POST.get(field_name, '').strip()
+
 
             if attr.required and not value:
                 messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='create_coop_error')
@@ -342,8 +357,8 @@ def create_coope(request):
 
     else:
         # GET
-        attributes = CoopAttribute.objects.filter(step=stepNumber)
-        can_submit, is_confirmed = get_submit_and_confirmed(user=request.user, stepNumber=stepNumber)
+        attributes = CoopAttribute.objects.filter(step=step)
+        can_submit, is_confirmed = get_submit_and_confirmed(user=request.user, step=step)
         mother_materials = mother_material.objects.prefetch_related('mother_material').order_by('describe').all()
         mines = Mine.objects.all()
 
@@ -458,7 +473,7 @@ def dynamic_step_view(request, url_name, order_id=None):
 
 
             # ثبت ویژگی‌های دینامیک
-            attributes = CoopAttribute.objects.filter(step=stepNumber)
+            attributes = CoopAttribute.objects.filter(step=step)
 
             # ثبت مواد خام
             for field, value in data.items():
@@ -492,8 +507,7 @@ def dynamic_step_view(request, url_name, order_id=None):
                     widths = request.POST.getlist('cutting_width[]')
                     quantities = request.POST.getlist('cutting_quantity[]')
                     descriptions = request.POST.getlist('cutting_description[]')
-                    sell_prices = request.POST.getlist('cutting_sell_price[]')
-                    production_prices = request.POST.getlist('cutting_production_price[]')
+                    images = request.POST.getlist('cutting_image[]')
 
 
 
@@ -503,13 +517,8 @@ def dynamic_step_view(request, url_name, order_id=None):
                             width = float(widths[i])
                             quantity = int(quantities[i])
                             description = descriptions[i]
-                            sell_price = None
-                            production_price = None
-                            try:
-                                sell_price = float(sell_prices[i])
-                                production_price = float(production_prices[i])
-                            except:
-                                pass
+                            image = images[i]
+
                             if length > 0 and width > 0 and quantity > 0:
 
                                 cutting_saw_obj , created = CuttingSaw.objects.get_or_create(
@@ -517,7 +526,8 @@ def dynamic_step_view(request, url_name, order_id=None):
                                                             length=length,
                                                             width=width,
                                                             quantity=quantity,
-                                                            description=description
+                                                            image= image,
+                                                            description=description,
                                                         )
 
 
@@ -533,36 +543,6 @@ def dynamic_step_view(request, url_name, order_id=None):
                         except (ValueError, IndexError) as e:
                             print(f'خطا در ثبت CuttingSaw در ردیف {i}: {e}')
 
-
-
-
-                    result = {}
-
-                    for key, value in request.POST.items():
-                        if 'sell_price' in key or 'production_price' in key:
-                            # Extract suffix (e.g., '1' from 'attr_47_sell_price_1')
-                            parts = key.split('_')
-                            suffix = parts[-1]
-                            price_type = 'sell' if 'sell_price' in key else 'prod'
-
-                            # Set value or default to '0' if None or empty
-                            cleaned_value = value.strip() if value and value.strip() != 'None' else '0'
-                            cleaned_value = convert_str_price2float(cleaned_value)
-                            # Ensure the inner dict exists
-                            if suffix not in result:
-                                result[suffix] = {}
-
-                            result[suffix][price_type] = cleaned_value
-
-
-                    items = CuttingSaw.objects.filter(coop=coop_record)
-
-                    for item in items:
-                        key = str(item.id)  # or another field if `id` isn't the match
-                        if key in result:
-                            item.sell_price = int(result[key]['sell'])
-                            item.production_price = int(result[key]['prod'])
-                            item.save()
 
 
 
@@ -631,7 +611,8 @@ def dynamic_step_view(request, url_name, order_id=None):
 
 
                     if attr.field_type == 'image':
-                        value = request.FILES.get(field_name)
+                        pass
+                        # value = request.FILES.get(field_name)
 
                     if attr.required and not value:
                         if attr.field_type !='bool':
@@ -698,7 +679,7 @@ def dynamic_step_view(request, url_name, order_id=None):
 
             mother_materials = mother_material.objects.prefetch_related('mother_material').order_by('describe').all()
 
-            can_submit, is_confirmed = get_submit_and_confirmed(user=request.user, stepNumber=stepNumber)
+            can_submit, is_confirmed = get_submit_and_confirmed(user=request.user, step=step)
 
             coop_record = coops.objects.filter(id=order_id).first()
             # اگر کوپ وجود داشت، مقادیر ثبت شده قبلی را بگیر
@@ -900,8 +881,7 @@ from django.urls import reverse
 @login_required
 def manage_coop_attributes(request):
     form = CoopAttributeForm()
-    attributes = CoopAttribute.objects.all()
-
+    attributes = CoopAttribute.objects.all().order_by('step__order')
     if request.method == 'POST':
         if 'edit_id' in request.POST:
             attr = get_object_or_404(CoopAttribute, id=request.POST['edit_id'])
@@ -927,6 +907,7 @@ def manage_coop_attributes(request):
                 messages.error(request, ' نام ویژگی تکراری است یا فرم کامل پرنشده است.', extra_tags='create_coop_feature_error')
 
     show_attr_items = CoopAttributeValue.objects.all()
+    
 
 
 
@@ -1499,14 +1480,14 @@ def calculate_total_price(coop):
 
 def price_attribute_list(request):
     # گرفتن تمام CoopAttribute های نوع 'price'
-    price_attrs = CoopAttribute.objects.filter(field_type='price').order_by('label')
+    price_attrs = CoopAttribute.objects.filter(field_type='price').order_by('step__order')
 
     # اطمینان از وجود PriceAttribute برای همه‌ی اینها، در صورت نبود بساز
     for attr in price_attrs:
         PriceAttribute.objects.get_or_create(attribute=attr)
 
     # گرفتن PriceAttributeهای مربوطه
-    price_attrs_with_multiplier = PriceAttribute.objects.filter(attribute__in=price_attrs).select_related('attribute')
+    price_attrs_with_multiplier = PriceAttribute.objects.filter(attribute__in=price_attrs).select_related('attribute').order_by('attribute__step__order')
 
     if request.method == 'POST':
         # پردازش فرم

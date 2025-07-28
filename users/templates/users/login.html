@@ -68,6 +68,15 @@
         <div class="col-md-6 col-lg-5">
             <div class="login-card">
                 <h4 class="text-center mb-4">👤 ورود به حساب کاربری</h4>
+                {% if messages %}
+                    {% for message in messages %}
+                    
+                        <div class="alert alert-{{ message.tags }}" style="text-align: right; display: block;">
+                        {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
 
                 {% if form.errors %}
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -83,16 +92,16 @@
                 <form method="POST" novalidate>
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="id_username" class="form-label">نام کاربری</label>
+                        <label for="id_username" class="form-label" style="text-align: right; display: block;">نام کاربری</label>
                         {{ form.username|add_class:"form-control" }}
                     </div>
                     <div class="mb-3">
-                        <label for="id_password" class="form-label">رمز عبور</label>
+                        <label for="id_password" class="form-label" style="text-align: right; display: block;">رمز عبور</label>
                         {{ form.password|add_class:"form-control" }}
                     </div>
-                    <div class="form-check mb-3">
+                    <div class="form-check mb-3" style="text-align: right; display: block;">
                         {{ form.remember_me }}
-                        <label class="form-check-label">مرا به خاطر بسپار</label>
+                        <label class="form-check-label" >مرا به خاطر بسپار</label>
                     </div>
                     <button type="submit" class="btn btn-login w-100">ورود</button>
                 </form>

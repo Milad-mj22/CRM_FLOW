@@ -539,6 +539,58 @@
             {% elif attr.field_type == 'int' or attr.field_type == 'float' %}
                 <input type="number" class="form-control text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
                        step="any" value="{{ attr.value }}" {% if attr.required %}required{% endif %}>
+           
+           
+        
+
+            {% elif attr.field_type == 'price' %}
+
+
+                <input type="text" id="attr_{{ attr.id }}" name="attr_{{ attr.id }}" class="form-control price-field" autocomplete="off"  value="{{ value }}" {% if attr.required %}required{% endif %}>
+
+                <!-- نمایش قیمت به حروف -->
+                <div id="price_text_{{ attr.id }}" class="text-muted mt-1" style="direction: rtl; text-align: right;"></div>
+
+
+
+            {% elif attr.field_type == 'image' %}
+                <div class="form-group mt-2">
+                    <input type="file" id="fileInput_{{ attr.id }}" class="form-control" name="attr_{{ attr.id }}" accept="image/*" {% if attr.required %}required{% endif %}>
+
+                    <!-- دکمه کنترل دوربین -->
+                    <button type="button" id="cameraBtn_{{ attr.id }}" class="btn btn-outline-primary btn-sm mt-2" style="text-align: right; display: block;">باز کردن دوربین</button>
+
+                    
+                    {% if value %}
+                        <div class="mb-2">
+                            <img src="{{ value }}" alt="تصویر" style="max-width: 300px; border: 1px solid #ccc; border-radius: 6px; text-align: right; display: block;" dir="rtl">
+
+                        </div>
+                    {% endif %}
+
+
+                    <!-- ویدئو و canvas برای گرفتن عکس -->
+                    <div class="mt-2">
+                        <video id="video_{{ attr.id }}" width="320" height="240" autoplay muted style="display:none; border:1px solid #ccc; border-radius:8px;"></video>
+                        <canvas id="canvas_{{ attr.id }}" width="320" height="240" style="display:none; border:1px solid #ccc; border-radius:8px;"></canvas>
+                    </div>
+
+                    <!-- فیلد مخفی برای ارسال عکس -->
+                    <input type="hidden" id="attr_{{ attr.id }}" name="attr_{{ attr.id }}">
+                    <input type="hidden" name="existing_image_{{ attr.id }}" value="{{ value }}">
+                </div>
+
+
+
+
+
+            {% elif attr.field_type == 'material' %}
+                <input type="text" class="form-control text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
+                       value="{{ attr.value }}" {% if attr.required %}required{% endif %}>
+
+
+           
+        
             {% else %}
                 <input type="text" class="form-control text-end" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
                        value="{{ attr.value }}" {% if attr.required %}required{% endif %}>
@@ -550,17 +602,6 @@
 
 
         
-        <!-- دکمه کنترل دوربین -->
-        <button type="button" id="cameraBtn" class="btn btn-primary">باز کردن دوربین</button>
-
-        <!-- ویدئو و canvas برای گرفتن عکس -->
-        <div style="margin-top: 15px;">
-            <video id="video" width="320" height="240" autoplay muted style="display:none; border:1px solid #ccc; border-radius:8px;"></video>
-            <canvas id="canvas" width="320" height="240" style="display:none; border:1px solid #ccc; border-radius:8px;"></canvas>
-        </div>
-
-        <!-- فیلد مخفی برای ارسال عکس -->
-        <input type="hidden" id="image_data" name="image_data" />
 
         {% if can_submit %}
             {% if not is_confirmed %}
@@ -591,67 +632,119 @@
 
 </body>
 
+
+
 <script>
-    const cameraBtn = document.getElementById('cameraBtn');
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const imageInput = document.getElementById('image_data');
-    let stream = null;
-    let cameraOn = false;
+document.addEventListener('DOMContentLoaded', () => {
+    // همه دکمه‌های باز کردن دوربین را انتخاب کن
+    const cameraButtons = document.querySelectorAll('[id^="cameraBtn_"]');
 
-    cameraBtn.addEventListener('click', async () => {
-        if (!cameraOn) {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                video.srcObject = stream;
-                video.style.display = 'block';
-                canvas.style.display = 'none';
-                cameraBtn.textContent = 'گرفتن عکس';
-                cameraOn = true;
-            } catch (error) {
-                alert('دسترسی به دوربین ممکن نیست: ' + error);
+    cameraButtons.forEach(button => {
+        const attrId = button.id.split('_')[1];
+        const video = document.getElementById(`video_${attrId}`);
+        const canvas = document.getElementById(`canvas_${attrId}`);
+        const imageInput = document.getElementById(`attr_${attrId}`);
+        const fileInput = document.getElementById(`fileInput_${attrId}`);
+
+        let stream = null;
+        let cameraOn = false;
+
+        button.addEventListener('click', async () => {
+            if (!cameraOn) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                    canvas.style.display = 'none';
+                    button.textContent = 'گرفتن عکس';
+                    cameraOn = true;
+                } catch (error) {
+                    alert('دسترسی به دوربین ممکن نیست: ' + error);
+                }
+            } else {
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                video.style.display = 'none';
+                canvas.style.display = 'block';
+
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+
+                button.textContent = 'باز کردن دوربین';
+                cameraOn = false;
+
+                const imageDataUrl = canvas.toDataURL('image/png');
+                imageInput.value = imageDataUrl;
+
+                console.log(`Captured image for attr_${attrId}`);
             }
-        } else {
-            // گرفتن عکس
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        });
 
-            // نمایش عکس و مخفی کردن ویدئو
-            video.style.display = 'none';
-            canvas.style.display = 'block';
+        // کنترل انتخاب فایل تصویر
+        if (fileInput) {
+            fileInput.addEventListener('change', () => {
+                const file = fileInput.files[0];
+                if (!file) return;
 
-            // قطع کردن دوربین
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Data = e.target.result;
 
-            cameraBtn.textContent = 'باز کردن دوربین';
-            cameraOn = false;
+                    // مقدار base64 را در hidden input ذخیره کن
+                    imageInput.value = base64Data;
 
-            // مقدار Base64 عکس را داخل input مخفی قرار بده
-            const imageDataUrl = canvas.toDataURL('image/png');
-            imageInput.value = imageDataUrl;
+                    // پیش‌نمایش تصویر را در canvas نمایش بده
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.onload = function() {
+                        // اندازه canvas را به اندازه تصویر تنظیم کن
+                        canvas.width = img.width;
+                        canvas.height = img.height;
 
-            console.log('Captured Image Data URL set to hidden input');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        canvas.style.display = 'block';
+                        video.style.display = 'none';
+                    };
+                    img.src = base64Data;
+
+                    // اگر دوربین فعال است، قطعش کن و دکمه را به حالت اولیه برگردان
+                    if (cameraOn) {
+                        stream.getTracks().forEach(track => track.stop());
+                        stream = null;
+                        cameraOn = false;
+                        button.textContent = 'باز کردن دوربین';
+                        video.style.display = 'none';
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
         }
     });
 
+    // بخش وزن خالص (همانند قبل)
+    const fullInput = document.getElementById('full_weight');
+    const emptyInput = document.getElementById('empty_weight');
+    const netInput = document.getElementById('net_weight');
 
+    function updateNetWeight() {
+        const full = parseFloat(fullInput.value) || 0;
+        const empty = parseFloat(emptyInput.value) || 0;
+        const net = full - empty;
+        netInput.value = net > 0 ? net.toFixed(1) : 0;
+    }
 
-
-document.getElementById('full_weight').addEventListener('input', updateNetWeight);
-document.getElementById('empty_weight').addEventListener('input', updateNetWeight);
-
-function updateNetWeight() {
-    const full = parseFloat(document.getElementById('full_weight').value) || 0;
-    const empty = parseFloat(document.getElementById('empty_weight').value) || 0;
-    const net = full - empty;
-    document.getElementById('net_weight').value = net > 0 ? net.toFixed(1) : 0;
-}
-
-
-
+    if (fullInput && emptyInput && netInput) {
+        fullInput.addEventListener('input', updateNetWeight);
+        emptyInput.addEventListener('input', updateNetWeight);
+    }
+});
 
 </script>
+
+
 
 {% endblock %}
 

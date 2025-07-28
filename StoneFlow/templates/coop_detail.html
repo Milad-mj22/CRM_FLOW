@@ -140,7 +140,10 @@ function printDiv(divId) {
                     <p class="text-muted small">اسکن برای مشاهده آنلاین</p>
                 </div>
 
-                {% if coop.material.image %}
+                {% if coop.image %}
+                    <img src="{{ coop.image }}" class="card-img-top" alt="{{ coop.material.name }}">
+
+                {% elif coop.material.image %}
                     <img src="{{ coop.material.image.url }}" class="card-img-top" alt="{{ coop.material.name }}">
                 {% endif %}
 
@@ -148,7 +151,7 @@ function printDiv(divId) {
                     <h4 class="card-title"><i class="bi bi-box-seam"></i> {{ coop.material.name }}</h4>
                     <hr>
                     <p><strong>وضعیت فعلی:</strong> <span class="badge bg-info text-dark">{{ coop.state.title }}</span></p>
-                    <p><strong>مقدار:</strong> {{ coop.quantity }}</p>
+                    <p><strong>مقدار:</strong> {{ coop.quantity }} {{coop.material.unit}} </p>
                     <p><strong>کاربر ثبت‌کننده:</strong> {{ coop.user.username }}</p>
                     <p><strong>تاریخ ثبت:</strong> {{ coop.submitted_at|date:"Y-m-d H:i" }}</p>
                     <p><strong>قیمت نهایی کوپ:</strong> {{ coop.total_price }}</p>
