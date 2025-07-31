@@ -80,32 +80,37 @@
                                 {% endif %}
                             </div>
                         {% endfor %}
+                          <hr>
+
+                        <div class="mb-4">
+                        <h5 class="mt-4">ویژگی‌های سفارشی</h5>
+                        </div>
 
                         {% for attr in buyer_attributes %}
-                                <label for="attr_{{ attr.attribute.id }}" class="form-label text-end d-block fw-bold">
-                                    {{ attr.attribute.label }}
-                                    {% if attr.attribute.required %}
+                                <label for="attr_{{ attr.id }}" class="form-label text-end d-block fw-bold">
+                                    {{ attr.label }}
+                                    {% if attr.required %}
                                         <span class="text-danger">*</span>
                                     {% endif %}
                                 </label>
-                                {% if attr.attribute.field_type == 'image' %}
-                                <input type="file" name="attr_{{ attr.attribute.id }}">
+                                {% if attr.field_type == 'image' %}
+                                <input type="file" name="attr_{{ attr.id }}">
                                 {% if value %}
                                     <img src="{{ value }}" height="80">
                                 {% endif %}
 
                                     
-                                {% elif attr.attribute.field_type == 'int' or attr.attribute.field_type == 'float' %}
+                                {% elif attr.field_type == 'int' or attr.field_type == 'float' %}
                                     <input type="number" class="form-control text-end"
-                                        name="attr_{{ attr.attribute.id }}" id="attr_{{ attr.attribute.id }}"
-                                        step="any" value="{{ value }}" {% if attr.attribute.required %}required{% endif %}>
-                                {% elif attr.attribute.field_type == 'bool' %}
+                                        name="attr_{{ attr.id }}" id="attr_{{ attr.id }}"
+                                        step="any" value="{{ value }}" {% if attr.required %}required{% endif %}>
+                                {% elif attr.field_type == 'bool' %}
                                     <div class="form-check text-end">
-                                        <input type="checkbox" class="form-check-input" name="attr_{{ attr.attribute.id }}" id="attr_{{ attr.attribute.id }}" {% if value == 'on' %}checked{% endif %}>
+                                        <input type="checkbox" class="form-check-input" name="attr_{{ attr.id }}" id="attr_{{ attr.id }}" {% if value == 'on' %}checked{% endif %}>
                                         <label class="form-check-label" for="attr_{{ attr.id }}">تأیید</label>
                                     </div>
                                 {% else %}
-                                    <input type="text" class="form-control text-end" name="attr_{{ attr.attribute.id }}" value="{{ attr.value }}"  {% if attr.attribute.required %}required{% endif %}>
+                                    <input type="text" class="form-control text-end" name="attr_{{ attr.id }}" value="{{ attr.value }}"  {% if attr.required %}required{% endif %}>
                                 {% endif %}
                         {% endfor %}
 

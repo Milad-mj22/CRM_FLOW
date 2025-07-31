@@ -606,8 +606,59 @@ class Buyer(models.Model):
 
     def __str__(self):
         return f"{self.first_name} - {self.last_name}"
+    
 
+class BuyerActivity(models.Model):
+    ACTIVITY_TYPE_CHOICES = [
+        ('call', 'تماس تلفنی'),
+        ('meeting', 'جلسه'),
+        ('message', 'پیام'),
+        ('email', 'ایمیل'),
+        ('whatsapp', 'واتساپ'),
+        ('note', 'یادداشت'),
+        # ('update', 'به‌روزرسانی اطلاعات'),
+        ('factors', 'فاکتور ها و خرید'),
+    ]
 
+    buyer = models.ForeignKey(
+        'Buyer',
+        on_delete=models.CASCADE,
+        related_name='activities',
+        verbose_name="خریدار"
+    )
+    activity_type = models.CharField(
+        max_length=20,
+        choices=ACTIVITY_TYPE_CHOICES,
+        verbose_name="نوع فعالیت"
+    )
+    title = models.CharField(max_length=255, verbose_name="عنوان فعالیت")
+    description = models.TextField(blank=True, null=True, verbose_name="توضیحات")
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="کاربر ثبت‌کننده"
+    )
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
+    next_followup = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ پیگیری بعدی")
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "فعالیت خریدار"
+        verbose_name_plural = "فعالیت‌های خریدار"
+
+    def __str__(self):
+        return f"{self.get_activity_type_display()} برای {self.buyer.name} - {self.title}"
+
+    @classmethod
+    def get_activity_type_display_by_index(cls, index_key):
+        """Return label for a given index_key (e.g., 'call')"""
+        return dict(cls.ACTIVITY_TYPE_CHOICES).get(index_key, 'نامشخص')
+    
+    @classmethod
+    def get_activity_type_labels(cls):
+        return [label for _, label in cls.ACTIVITY_TYPE_CHOICES]
 
 class BuyerAttribute(models.Model):
     FIELD_TYPES = [

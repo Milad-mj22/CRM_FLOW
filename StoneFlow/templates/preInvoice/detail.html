@@ -94,8 +94,11 @@
     </div>
 
     <div class="action-btns">
-      <a href="{% url 'sell_preinvoice' preinvoice.id %}" class="btn btn-success btn-sm mx-1">💰 تبدیل به فروش</a>
-
+      {% if preinvoice.is_sell %}
+        <div class="info-label">فروش رفته است</div>
+      {% else %}
+        <a href="{% url 'sell_preinvoice' preinvoice.id %}" class="btn btn-success btn-sm mx-1">💰 تبدیل به فروش</a>
+      {% endif %}
       <a href="{% url 'user_preinvoices' %}" class="btn btn-secondary btn-sm mx-1">⬅️ بازگشت</a>
     </div>
   </div>

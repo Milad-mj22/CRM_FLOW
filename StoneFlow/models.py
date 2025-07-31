@@ -303,6 +303,7 @@ class PreInvoice(models.Model):
     customer = models.ForeignKey(Buyer, on_delete=models.CASCADE, verbose_name="نام مشتری")
 
     note = models.TextField(blank=True, null=True, verbose_name="توضیحات")
+    is_sell = models.BooleanField(default=False)
 
     def __str__(self):
         return f"پیش‌فاکتور {self.id} - {self.customer.first_name}"
@@ -313,7 +314,7 @@ class PreInvoiceItem(models.Model):
     coop = models.ForeignKey(coops, on_delete=models.CASCADE, verbose_name="کوپ انتخابی")
     unit_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت واحد")
     discount = models.DecimalField(max_digits=10, decimal_places=0, default=0, verbose_name="تخفیف")
-
+    is_sell = models.BooleanField(default=False)
     def total_price(self):
         return self.unit_price - self.discount
 

@@ -1,0 +1,164 @@
+
+{% extends "users/base.html" %}
+{% load static %}
+{% block content %}
+{% load custom_filters %}
+
+<style>
+  .buyer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .activity-tabs {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .activity-tabs button {
+    border: none;
+    background-color: #f1f3f5;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: background 0.3s;
+  }
+
+  .activity-tabs button.active,
+  .activity-tabs button:hover {
+    background-color: #0d6efd;
+    color: white;
+  }
+
+  .activity-content {
+    margin-top: 1rem;
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+    min-height: 200px;
+    transition: all 0.3s ease;
+  }
+
+  .buyer-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    width: 100%;
+  }
+
+  .buyer-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+
+  .buyer-info div {
+    min-width: 180px;
+  }
+</style>
+
+<div class="container mt-5">
+
+  <!-- Buyer Info Card -->
+  <div class="buyer-card mb-4">
+    <div class="buyer-header">
+      <h2>{{ buyer.first_name }} {{ buyer.last_name }}</h2>
+      <div>
+        <a href="{% url 'edit_buyer' buyer.id %}" class="btn btn-outline-primary">✏️ ویرایش</a>
+        <a href="{% url 'delete_buyer' buyer.id %}" class="btn btn-outline-danger">🗑️ حذف</a>
+      </div>
+    </div>
+    <div class="buyer-info">
+      <div><strong>کد ملی:</strong> {{ buyer.national_code }}</div>
+      <div><strong>شماره تماس:</strong> {{ buyer.phone_number }}</div>
+      <div><strong>آدرس:</strong> {{ buyer.address }}</div>
+      <div><strong>تاریخ ثبت:</strong> {{ buyer.created_date|to_jalali }}</div>
+    </div>
+  </div>
+
+  <!-- Activity Tabs -->
+  <div class="activity-tabs">
+    {% for activity in activities %}
+      <button class="activity-tab" data-activity="{{ activity }}">{{ activity.title }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- Activity Content -->
+  <div class="activity-content" id="activityContent">
+    <p class="text-muted">روی یکی از تب‌های بالا کلیک کنید تا فعالیت‌ها نمایش داده شود.</p>
+  </div>
+
+</div>
+
+
+
+
+
+
+
+<div id="factorsSection" style="display: none;">
+  {% for factor in factors %}
+    <div class="card mb-2">
+      <div class="card-body">
+        <h6 class="card-title">فاکتور شماره {{ factor.id }}</h6>
+        <p class="card-text">تاریخ: {{ factor.date|to_jalali }}</p>
+        <p class="card-text">مبلغ کل: {{ factor.total_price }} تومان</p>
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-muted">هیچ فاکتوری ثبت نشده است.</p>
+  {% endfor %}
+</div>
+
+
+<script>
+  document.getElementById('showActivitiesBtn').addEventListener('click', function () {
+    document.getElementById('activitiesSection').style.display = 'block';
+    document.getElementById('factorsSection').style.display = 'none';
+  });
+
+  document.getElementById('showFactorsBtn').addEventListener('click', function () {
+    document.getElementById('activitiesSection').style.display = 'none';
+    document.getElementById('factorsSection').style.display = 'block';
+  });
+</script>
+
+
+
+<script>
+  const tabs = document.querySelectorAll('.activity-tab');
+  const content = document.getElementById('activityContent');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const activityId = tab.getAttribute('data-activity');
+
+      fetch(`/buyers/activity/{{ buyer.id }}/${activityId}/`)
+        .then(res => res.text())
+        .then(html => {
+          content.innerHTML = html;
+        });
+    });
+  });
+</script>
+
+
+<!-- Bootstrap 5 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+
+{% endblock %}

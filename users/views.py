@@ -9,6 +9,7 @@ from django.views import View
 from django.contrib.auth.decorators import login_required
 from khayyam import JalaliDatetime
 
+from StoneFlow.models import PreInvoice, PreInvoiceItem
 from order_flow.models import MaterialUsage, OrderStep
 from users.EntryModule.EntryUtils import get_latest_exit, is_user_in , UserWorkTimeManager
 from users.utils.utils import send_push_notification
@@ -17,7 +18,7 @@ from users.utils.CalulatedDistance import calculate_distance
 
 from .forms import BuyerAttributeForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
 from django.views import generic
-from .models import AllowedLocation, BuyerAttribute, BuyerAttributeValue, CapturedImage, Inventory, InventoryLog, MaterialComposition, MenuItem, Post, RemainingMaterialsUsage,Tools,full_post,Profile
+from .models import AllowedLocation, BuyerActivity, BuyerAttribute, BuyerAttributeValue, CapturedImage, Inventory, InventoryLog, MaterialComposition, MenuItem, Post, RemainingMaterialsUsage,Tools,full_post,Profile
 from django.shortcuts import get_object_or_404
 import numpy as np
 from django.http import HttpResponse
@@ -2264,47 +2265,88 @@ def edit_buyer(request, pk):
                         defaults={'value': value, 'image': None}
                     )
             return redirect('buyer_list')
+            
+        else:
+            return redirect('error_page')
+
+
+
     else:
+
+
+        
         form = BuyerForm(instance=buyer)
-        buyer_attrs = BuyerAttributeValue.objects.filter(buyer=pk)
+        buyer_attrs = BuyerAttribute.objects.all()
 
 
 
     return render(request, 'Buyer/buyer_edit.html', {'form': form, 'title': 'ویرایش خریدار','buyer_attributes':buyer_attrs})
 
 
+from django.db.models import Q
+
 def buyer_list(request):
-    buyers = Buyer.objects.all().order_by('-id')  # نزولی (آخرین رکورد اول)
-    return render(request, 'Buyer/buyer_list.html', {'buyers': buyers})
+    query = request.GET.get('q')
+    buyers = Buyer.objects.all().order_by('-id')
 
+    if query:
+        buyers = buyers.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(phone_number__icontains=query) |
+            Q(nationality__name__icontains=query)
+        )
 
+    return render(request, 'Buyer/buyer_list.html', {
+        'buyers': buyers,
+        'query': query,
+    })
+
+@login_required
+def delete_buyer(request, buyer_id):
+    buyer = get_object_or_404(Buyer, id=buyer_id)
+    
+    if request.method == 'POST':
+        buyer.delete()
+        messages.success(request, 'مشتری با موفقیت حذف شد.')
+        return redirect('buyer_list')  # replace with your actual buyer list url name
+
+    return render(request, 'Buyer/confirm_delete.html', {'buyer': buyer})
 
 from django.db.models import Count, Sum
 from django.shortcuts import render
 from .models import Buyer, InventoryLog
+from django.db.models import Count, Sum
+from collections import defaultdict
+from StoneFlow.models import PreInvoice, PreInvoiceItem, Buyer  # Adjust import paths
 
+@login_required
 def buyer_dashboard(request):
-    purchase_logs = InventoryLog.objects.filter(change_type='REMOVE', buyer__isnull=False)
+    # Only consider sold pre-invoices
+    sold_invoices = PreInvoice.objects.filter(is_sell=True)
 
-    # مشتریان برتر
-    top_buyers = purchase_logs.values('buyer__id', 'buyer__first_name').annotate(
+    # مشتریان برتر (Top Buyers)
+    top_buyers = sold_invoices.values('customer__id', 'customer__first_name','customer__last_name').annotate(
         total_purchases=Count('id')
     ).order_by('-total_purchases')[:10]
 
-    # محصولات محبوب هر مشتری
-    from collections import defaultdict
+    # محصولات محبوب هر مشتری (Most Bought Product by Each Buyer)
     buyer_products = defaultdict(list)
-    top_buyer_ids = [b['buyer__id'] for b in top_buyers]
-    for log in purchase_logs.filter(buyer__id__in=top_buyer_ids):
-        buyer_products[log.buyer.id].append(log)
+    top_buyer_ids = [b['customer__id'] for b in top_buyers]
+    
+    # Get all items of sold invoices for top buyers
+    items = PreInvoiceItem.objects.filter(pre_invoice__is_sell=True, pre_invoice__customer__id__in=top_buyer_ids)
+
+    for item in items:
+        buyer_products[item.pre_invoice.customer.id].append(item)
 
     top_products = []
-    for buyer_id, logs in buyer_products.items():
+    for buyer_id, item_list in buyer_products.items():
         product_totals = defaultdict(float)
-        buyer_name = logs[0].buyer.first_name if logs else ""
-        for log in logs:
-            material_name = log.inventory.inventory_raw_material.name
-            product_totals[material_name] += float(log.amount)
+        buyer_name = item_list[0].pre_invoice.customer.first_name if item_list else ""
+        for item in item_list:
+            material_name = item.coop.material.name
+            product_totals[material_name] += float(item.unit_price or 0)
 
         if product_totals:
             top_product = max(product_totals.items(), key=lambda x: x[1])
@@ -2315,16 +2357,17 @@ def buyer_dashboard(request):
                 'top_product_amount': top_product[1],
             })
 
-    # مشتریان بدون خرید
-    inactive_buyers = Buyer.objects.exclude(id__in=purchase_logs.values_list('buyer_id', flat=True))
+    # مشتریان بدون خرید (Buyers Without Purchase)
+    all_buyers_with_purchase = sold_invoices.values_list('customer_id', flat=True)
+    inactive_buyers = Buyer.objects.exclude(id__in=all_buyers_with_purchase)
 
-    # مشتریان وفادار
-    loyal_buyers = purchase_logs.values('buyer__id', 'buyer__first_name').annotate(
+    # مشتریان وفادار (Loyal Buyers - 5+ purchases)
+    loyal_buyers = sold_invoices.values('customer__id', 'customer__first_name').annotate(
         total_purchases=Count('id')
     ).filter(total_purchases__gte=5).order_by('-total_purchases')
 
-    # برای نمودار
-    chart_labels = [b['buyer__first_name'] for b in top_buyers]
+    # For Chart
+    chart_labels = [b['customer__first_name'] for b in top_buyers]
     chart_data = [b['total_purchases'] for b in top_buyers]
 
     context = {
@@ -2337,8 +2380,6 @@ def buyer_dashboard(request):
     }
 
     return render(request, 'Buyer/buyer_dashboard.html', context)
-
-
 
 
 
@@ -2445,9 +2486,65 @@ def delete_buyer_attribute(request, attr_id):
 
 
 
+def buyer_detail(request, buyer_id):
+    buyer = get_object_or_404(Buyer, id=buyer_id)
+    activities = BuyerActivity.get_activity_type_labels()
+    return render(request, 'Buyer/buyer_history.html', {
+        'buyer': buyer,
+        'activities': activities,
+    })
+
+def buyer_activity_detail(request, buyer_id, activity_type):
+    activity_logs = BuyerActivity.objects.filter(buyer_id=buyer_id, activity_type=activity_type)
+    factors = PreInvoice.objects.filter(buyer=buyer_id)  # adapt based on your model
+    return render(request, 'Buyer/partials/activity_logs.html', {'logs': activity_logs,'factors':factors})
+
+def buyer_activity_detail(request, buyer_id, activity_type):
+    activity_logs = BuyerActivity.objects.filter(buyer_id=buyer_id, activity_type=activity_type)
+    factor_items = None
+    total_price =0
+    if activity_type=='فاکتور ها و خرید':
+        # گرفتن فاکتورهای مربوط به مشتری خاص
+        factors = PreInvoice.objects.filter(customer=buyer_id,is_sell=True)
+
+        # گرفتن آیتم‌های مربوط به همه فاکتورها
+        factor_items = PreInvoiceItem.objects.filter(pre_invoice__in=factors)
+        
+        for item in factor_items:
+            total_price+=float(item.total_price())
+
+        # جمع کل قیمت‌ها
+        # total_price = sum(item.total_price or 0 for item in factor_items)
+
+    return render(request, 'Buyer/partials/activity_logs.html', {
+        'logs': activity_logs,
+        'buyer_id': buyer_id,
+        'activity_choices': BuyerActivity.get_activity_type_labels(),
+        'selected_activity_type': activity_type,  # Add this line
+        'factors':factor_items,
+        'total_price':total_price,
+    })
+
+def add_buyer_activity(request, buyer_id):
+    if request.method == 'POST':
+        activity_type = request.POST.get('activity_type')
+        description = request.POST.get('description')
+
+        BuyerActivity.objects.create(
+            buyer_id=buyer_id,
+            activity_type=activity_type,
+            description=description,
+            created_by=request.user  # if your model supports it
+        )
+        return redirect('buyer_detail', buyer_id=buyer_id)
 
 
 
+@login_required
+def show_factor(request, pk):
+
+    invoice = get_object_or_404(PreInvoice, pk=pk)
+    return render(request, 'preinvoice/detail.html', {'preinvoice': invoice})
 
 
 # views.py
