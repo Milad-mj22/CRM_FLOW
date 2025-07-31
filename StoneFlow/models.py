@@ -310,7 +310,7 @@ class PreInvoice(models.Model):
 
 class PreInvoiceItem(models.Model):
     pre_invoice = models.ForeignKey(PreInvoice, on_delete=models.CASCADE, related_name="items")
-    coop = models.ForeignKey(CuttingSaw, on_delete=models.CASCADE, verbose_name="کوپ انتخابی")
+    coop = models.ForeignKey(coops, on_delete=models.CASCADE, verbose_name="کوپ انتخابی")
     unit_price = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="قیمت واحد")
     discount = models.DecimalField(max_digits=10, decimal_places=0, default=0, verbose_name="تخفیف")
 
@@ -318,7 +318,7 @@ class PreInvoiceItem(models.Model):
         return self.unit_price - self.discount
 
     def __str__(self):
-        return f"آیتم {self.coop.coop.material.name} برای {self.pre_invoice}"
+        return f"آیتم {self.coop.material.name} برای {self.pre_invoice}"
     
 
 
