@@ -1156,10 +1156,11 @@ def convert_str_price2float(price:str):
 
         if price is not None:
             if price !='None':
+                if price!='':
 
-                price = float(price.replace(',', ''))
-                return price
-        
+                    price = float(price.replace(',', ''))
+                    return price
+            
         return 0
 
 
@@ -1172,9 +1173,9 @@ def create_preinvoice_view(request):
         selected_ids = request.POST.getlist('selected_coops')
 
 
-        selected_coops = CuttingSaw.objects.filter(id__in=selected_ids)
+        # selected_coops = CuttingSaw.objects.filter(id__in=selected_ids)
 
-        # selected_coops = coops.objects.filter(id__in=selected_ids)
+        selected_coops = coops.objects.filter(id__in=selected_ids)
 
         # Load template
 
@@ -1195,7 +1196,8 @@ def create_preinvoice_view(request):
         # Retrieve other form data like customer, coops, prices...
 
         if language == 'fa':
-            template_path = 'media/templates/preinvoice_template.xlsx'
+            template_path = r'media\templates\preinvoice_template.xlsx'
+            
             # تبدیل به جلالی
             today_gregorian = jdatetime.datetime.fromgregorian(datetime=today_gregorian)
 
@@ -1233,16 +1235,16 @@ def create_preinvoice_view(request):
         total_price = 0
         total_discount = 0
 
-        for iter,stone in enumerate(selected_coops):
+        for iter,coop in enumerate(selected_coops):
         
-            material_name = stone.coop.material.name
-            quantity = stone.quantity
+            material_name = coop.material.name
+            quantity = coop.quantity
             # try:
-            price = (request.POST.get(f'{price_type}{stone.id}', '0'))
+            price = (request.POST.get(f'{price_type}{coop.id}', '0'))
             price = convert_str_price2float(price=price)
             # except:
             #     price = 0
-            discount = float(request.POST.get(f'discount_{stone.id}', '0'))
+            discount = float(request.POST.get(f'discount_{coop.id}', '0'))
             total = price * (100 - discount) / 100
 
             ws.cell(row=row, column=col_start, value=iter+1)
@@ -1256,7 +1258,7 @@ def create_preinvoice_view(request):
             total_discount+=(float(discount))
             row += 1
 
-            PreInvoiceItem.objects.create(pre_invoice = current_preInvoice,coop=stone,
+            PreInvoiceItem.objects.create(pre_invoice = current_preInvoice,coop=coop,
                                           unit_price=float(price),discount=float(discount))
 
 
@@ -1297,26 +1299,24 @@ def create_preinvoice_view(request):
         return response
 
     else:
-        # coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
+        coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
 
-        # stones = []
 
-        # coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
 
-        # for coop in coops_final:
-        #     coop.total_price = calculate_total_price(coop=coop)
+        for coop in coops_final:
+            coop.total_price = calculate_total_price(coop=coop)
 
-        #     try:
-        #         sell_price_attr = coop.attribute_values.filter(attribute__label="قیمت فروش").first()
-        #         if sell_price_attr and sell_price_attr.value and sell_price_attr.value != 'None':
-        #             cleaned_value = sell_price_attr.value.replace(':', '').replace(' ', '')
-        #             sell_price = Decimal(cleaned_value)
-        #         else:
-        #             sell_price = Decimal(0)
-        #     except:
-        #         sell_price = Decimal(0)
+            try:
+                sell_price_attr = coop.attribute_values.filter(attribute__label="قیمت فروش").first()
+                if sell_price_attr and sell_price_attr.value and sell_price_attr.value != 'None':
+                    sell_price = sell_price_attr.value.replace(':', '').replace(' ', '')
+                    # sell_price = Decimal(cleaned_value)
+                else:
+                    sell_price = Decimal(0)
+            except:
+                sell_price = Decimal(0)
 
-        #     coop.sell_price = sell_price
+            coop.sell_price = sell_price
 
         #     # Add all related stones
         #     for stone in coop.CuttingSaw_values.all():  # Assuming 'stones' is related_name
@@ -1325,17 +1325,17 @@ def create_preinvoice_view(request):
         #         stone.total_price = coop.total_price
         #         stones.append(stone)
 
-        items = CuttingSaw.objects.all()
-        final_items = []
-        for item in items:
-            if item.coop.state.order>=7:
-                final_items.append(item)
+        # items = CuttingSaw.objects.all()
+        # final_items = []
+        # for item in items:
+        #     if item.coop.state.order>=7:
+        #         final_items.append(item)
 
 
         customers = Buyer.objects.all()
 
         return render(request, 'create_preinvoice.html', {
-            'stones': final_items,
+            'coops': coops_final,
             'customers': customers,
         })
     
