@@ -108,7 +108,7 @@ admin.site.register(Warehouse, WarehouseAdmin)
 
 class InventoryLogAdmin(admin.ModelAdmin):
     # Fields to display in the list view
-    list_display = ('inventory','buyer', 'change_type', 'amount', 'jalali_date', 'user', 'warehouse' , 'receipt_Number')
+    list_display = ('inventory','buyer', 'change_type', 'amount', 'jalali_date', 'user', 'warehouse' , 'receipt_Number','coop')
 
     # Add filtering options
     list_filter = ('change_type','buyer', 'inventory__warehouse', 'date')
@@ -117,7 +117,7 @@ class InventoryLogAdmin(admin.ModelAdmin):
     search_fields = ('inventory__raw_material__name', 'user__username', 'inventory__warehouse__name')
     
     # Fields to display in the form
-    fields = ('inventory','buyer', 'change_type', 'amount', 'date', 'user', 'receipt_Number')
+    fields = ('inventory','buyer', 'change_type', 'amount', 'date', 'user', 'receipt_Number','coop')
     
     # Method to display the Jalali date in the admin list view
     def jalali_date(self, obj):

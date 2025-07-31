@@ -290,6 +290,7 @@ $(document).ready(function () {
                     <th class="text-center">مقدار</th>
                     <th class="text-center">تاریخ</th>
                     <th class="text-center">ماده اولیه</th>
+                    <th class="text-center">کوپ</th>
                     <th class="text-center">انبار</th>
                 </tr>
             </thead>
@@ -301,12 +302,28 @@ $(document).ready(function () {
                     <td class="text-center">{{ log.amount }}</td>
                     <td class="text-center">{{ log.jalali_date }}</td>
                     <td class="text-center">{{ log.inventory.inventory_raw_material.name }}</td>
+                    <td class="text-center">
+                    <button class="btn btn-primary" onclick="handleClick('{{ log.coop.id }}')">
+                        {{ log.coop }}
+                    </button>
+                    </td>
                     <td class="text-center">{{ log.inventory.warehouse.name }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+<script>
+function handleClick(id) {
+  alert('Clicked: ' + id);
+  // You can redirect or do other things here
+  window.location.href = '/stone_flow/coops/' +id;
+}
+</script>
+
+
+
 </body>
 
 {% endblock %}

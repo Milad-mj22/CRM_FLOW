@@ -12,7 +12,7 @@ from .models import AttributeGroup, CoopAttribute, CoopAttributeValue, CoopDelet
 from django.http import HttpResponseForbidden
 from StoneFlow.models import coops , Step
 from mines.models import Mine
-from users.models import Buyer, Profile, Warehouse, mother_material , raw_material
+from users.models import Buyer, Inventory, Profile, Warehouse, mother_material , raw_material
 # Create your views here.
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
@@ -46,6 +46,10 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 from django.db.models import OuterRef, Subquery, DateTimeField, IntegerField
+
+
+DEFULT_WARE_HOUSE_CREATE_COOP = 'انبار کوپ کیان'
+
 
 def get_allowed_confirm_users(step:Step,user):
 
@@ -225,8 +229,8 @@ def coop_dashboard(request):
 
 
 from django.db import transaction
+# @transaction.atomic
 @login_required
-@transaction.atomic
 def create_coope(request):
     stepNumber = 1
     step = Step.objects.filter(order = 1).first()
@@ -248,6 +252,7 @@ def create_coope(request):
         mine_id = request.POST.get('mine_id')
         if not mine_id:
             messages.error(request, "لطفاً یک معدن انتخاب کنید.")
+            return redirect('error_page')
             raise Exception("معدن انتخاب نشده")
 
         selected_mine = Mine.objects.filter(id=mine_id).first()
@@ -297,12 +302,25 @@ def create_coope(request):
                     coop_record.save()
 
 
+                    ret = add_material2warehouse(user=request.user.profile,value=Decimal(value),raw_material_instance=raw_material_obj,warehouse_name=DEFULT_WARE_HOUSE_CREATE_COOP,coop=coop_record)
+                    if not ret:
+                        return render(request, 'flow_error_page.html', {'text': "خطا در ذخیره سنگ در انبار"})
+
+
+
+
             except Exception as e:
                 # raise Exception(f"خطا در ثبت مواد اولیه: {field}")
                 print('Error is Save Raw amterial', field)
 
+
+
+
+
         if coop_record is None:
-            raise Exception("هیچ کوپی ثبت نشد")
+            # return redirect('error_page',context={'text':"هیچ کوپی ثبت نشد"})
+            return render(request, 'flow_error_page.html', {'text': "هیچ سنگی مقدار دهی نشده است."})
+            # raise Exception()
 
         # ثبت ویژگی‌های دینامیک
         attributes = CoopAttribute.objects.filter(step=step)
@@ -313,7 +331,9 @@ def create_coope(request):
 
             if attr.required and not value:
                 messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='create_coop_error')
-                raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+                # raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+                return render(request, 'flow_error_page.html', {'text': f'فیلد الزامی "{attr.label}" خالی است'})
+            
 
 
             # ✅ اگر نوع فیلد date بود، تبدیل شمسی به میلادی
@@ -343,7 +363,8 @@ def create_coope(request):
                 )
 
         messages.success(request, "مقادیر با موفقیت ثبت شدند.")
-        return render(request, 'success_page.html', {'content': 'حواله جدید با موفقیت ثبت گردید'})
+        return render(request, 'success_page.html', {'content': f'{step.title} با موفقیت ثبت گردید','order_id':coop_record.id})
+
 
         # except Exception as e:
         #     print('❌ خطا در ثبت اطلاعات:', e)
@@ -465,7 +486,9 @@ def dynamic_step_view(request, url_name, order_id=None):
 
 
             if coop_record is None:
-                raise Exception("هیچ کوپی ثبت نشد")
+                return render(request, 'flow_error_page.html', {'text': "هیچ سنگی مقدار دهی نشده است."})
+            
+
             
             coop_record.state = step
             coop_record._changed_by = request.user
@@ -592,7 +615,8 @@ def dynamic_step_view(request, url_name, order_id=None):
                     values = request.POST.getlist(field_name)
                     if attr.required and not values:
                         messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
-                        raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+                        return render(request, 'flow_error_page.html', {'text':f'فیلد الزامی "{attr.label}" خالی است'})
+
 
                     # حذف مقادیر قبلی
                     CoopAttributeValue.objects.filter(coop=coop_record, attribute=attr).delete()
@@ -617,7 +641,9 @@ def dynamic_step_view(request, url_name, order_id=None):
                     if attr.required and not value:
                         if attr.field_type !='bool':
                             messages.error(request, f'فیلد "{attr.label}" الزامی است.', extra_tags='dynamic_coop_step_error')
-                            raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+                            # raise Exception(f'فیلد الزامی "{attr.label}" خالی است')
+                            return render(request, 'flow_error_page.html', {'text': f'فیلد الزامی "{attr.label}" خالی است'})
+
                         
                    
                     CoopAttributeValue.objects.filter(coop=coop_record, attribute=attr).delete()
@@ -632,10 +658,21 @@ def dynamic_step_view(request, url_name, order_id=None):
                             except ValueError:
                                 continue  # اگر مقدار نامعتبر بود هم ذخیره نکن
 
+                        elif attr.field_type =='Cutting_factory':
+                            warehouse = Warehouse.objects.filter(name = DEFULT_WARE_HOUSE_CREATE_COOP).first()
+
+                            try:
+                                inventory = Inventory.objects.get(inventory_raw_material=coop_record.material,warehouse=warehouse)
+                                inventory.coop_remove(coop=coop_record,amount=Decimal(coop_record.quantity),user=request.user.profile)
+
+                                # You can now use `inventory`
+                            except Inventory.DoesNotExist:
+                                inventory = None  # or handle the case appropriately
+
 
 
                         # ✅ اگر نوع فیلد date بود، تبدیل شمسی به میلادی
-                        if attr.field_type == 'date':
+                        elif attr.field_type == 'date':
                             try:
                                 # انتظار داریم فرمت دریافتی شمسی مثل "1403/04/23" باشد
                                 jalali_parts = value.split('/')
@@ -663,7 +700,7 @@ def dynamic_step_view(request, url_name, order_id=None):
 
 
             messages.success(request, "مقادیر با موفقیت ثبت شدند.")
-            return render(request, 'success_page.html', {'content': f'{step.title} با موفقیت ثبت گردید'})
+            return render(request, 'success_page.html', {'content': f'{step.title} با موفقیت ثبت گردید','order_id':order_id})
 
 
 
@@ -1614,3 +1651,29 @@ def sell_preinvoice(request, pk):
 def preinvoice_detail(request, pk):
     invoice = get_object_or_404(PreInvoice, pk=pk, created_by=request.user)
     return render(request, 'preinvoice/detail.html', {'preinvoice': invoice})
+
+
+
+
+def add_material2warehouse(user:Profile,value:float,raw_material_instance:raw_material=None,raw_material_name:str='',warehouse_instance=None,warehouse_name:str='',coop=None):
+    try:
+        from django.utils.timezone import now
+        if raw_material_instance is None and raw_material_name != '':
+            raw_material_instance = raw_material.objects.get(name=raw_material_name)
+
+        if warehouse_instance is None and warehouse_name != '':
+            warehouse_instance = Warehouse.objects.get(name=warehouse_name)
+
+        if isinstance(value, (int, float)):
+            value = Decimal(value)
+
+        inventory, created = Inventory.objects.get_or_create(
+            inventory_raw_material=raw_material_instance,
+            warehouse=warehouse_instance
+        )
+
+        inventory.add_stock(amount=value, user=user, receipt_number='1',coop=coop)
+        return True
+
+    except Exception as e:
+        return False

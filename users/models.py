@@ -11,7 +11,6 @@ from tinymce.models import HTMLField
 from users.fields import JalaliDateField  # Adjust the import path as needed
 from phonenumber_field.modelfields import PhoneNumberField
 from khayyam import JalaliDatetime
-
 try:
     RESAMPLING = Image.Resampling.LANCZOS
 except AttributeError:
@@ -497,14 +496,14 @@ class Inventory(models.Model):
     receipt_Number = models.IntegerField( null=True,blank=True, default=0)
 
 
-    def add_stock(self, amount,user,receipt_number):
+    def add_stock(self, amount,user,receipt_number,coop=None):
         """افزودن کالا به انبار و ایجاد لاگ به‌طور خودکار"""
         try:
             self.quantity += amount
             self.last_updated = timezone.now()
             self.receipt_Number = receipt_number  # ذخیره شماره فیش
             self.save()
-            InventoryLog.objects.create(inventory=self, change_type='ADD', amount=amount,user=user,receipt_Number = self.receipt_Number)
+            InventoryLog.objects.create(inventory=self, change_type='ADD', amount=amount,user=user,receipt_Number = self.receipt_Number,coop=coop)
             return True , 'مقادیر مورد نظر با موفقیت اضافه گردید'
         except:
             return False, 'خطا در افزودن در دیتابیس'
@@ -520,6 +519,17 @@ class Inventory(models.Model):
         else:
             # raise ValueError("موجودی کافی نیست.")
             return False , 'موجودی کافی نیست'
+    
+
+    def coop_remove(self,coop,amount,user:Profile,buyer=None):
+
+
+        object_add = InventoryLog.objects.filter(change_type='ADD', coop=coop)
+        object_remove = InventoryLog.objects.filter(change_type='REMOVE', coop=coop)
+        if object_add.exists() and not object_remove.exists():
+            InventoryLog.objects.create(inventory=self, change_type='REMOVE',coop=coop, amount=amount,user=user,receipt_Number = '1',buyer=buyer)
+
+
             
 
     def __str__(self):
@@ -637,6 +647,10 @@ class BuyerAttributeValue(models.Model):
 
 
 class InventoryLog(models.Model):
+
+    from StoneFlow.models import coops
+
+
     inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE, related_name='logs')
     change_type = models.CharField(max_length=10, choices=(('ADD', 'افزودن'), ('REMOVE', 'برداشتن')))
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -645,6 +659,9 @@ class InventoryLog(models.Model):
     buyer = models.ForeignKey(Buyer, on_delete=models.SET_NULL, null=True, blank=True)
    
     receipt_Number = models.IntegerField( null=True,blank=True, default=0)
+
+    coop = models.ForeignKey(coops, on_delete= models.CASCADE,related_name='coop_inventory_log',blank=True,null=True,default=1)
+
 
     confirmed_by_buyer = models.BooleanField(default=False)  # Add this line
     
