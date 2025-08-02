@@ -40,10 +40,22 @@
       <button onclick="copyShareLink()" class="btn btn-outline-primary mx-2">
         🔗 اشتراک‌گذاری لینک
       </button>
+
+    {% if current_preInvoice.is_sell %}
+      <div class="info-label">فروش رفته است</div>
+    {% else %}
+      <a href="{% url 'sell_preinvoice' current_preInvoice.id %}" class="btn btn-outline-success mx-2">💰 تبدیل به فروش</a>
+    {% endif %}
+
+
+
     </div>
 
     <input type="text" id="shareLink" class="form-control mt-3 text-center" readonly
            value="{{ pdf_url }}" style="display: none;">
+
+
+
 
   </div>
 </div>

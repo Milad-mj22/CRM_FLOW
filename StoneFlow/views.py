@@ -1289,7 +1289,7 @@ def create_preinvoice_view(request):
         convert_excel_to_pdf(excel_path, pdf_path)
 
         # Redirect to preview page
-        return redirect("preview_preinvoice", filename=filename_base)
+        return redirect("preview_preinvoice", filename=filename_base,current_preInvoice=current_preInvoice.id)
 
 
 
@@ -1299,9 +1299,17 @@ def create_preinvoice_view(request):
         return response
 
     else:
-        coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order,is_active=True,is_sell=False)
 
+        show_all = request.GET.get("show_all_coops") == "on"
 
+        if show_all:
+            coops_final = coops.objects.filter(is_active=True, is_sell=False)
+        else:
+            coops_final = coops.objects.filter(
+                state__order=Step.objects.latest('order').order,
+                is_active=True,
+                is_sell=False
+            )
 
         for coop in coops_final:
             coop.total_price = calculate_total_price(coop=coop)
@@ -1340,13 +1348,17 @@ def create_preinvoice_view(request):
         })
     
 
-def show_preinvoce_result(request,filename):
+def show_preinvoce_result(request,filename,current_preInvoice):
+
+    current_preInvoice  = PreInvoice.objects.filter(pk = current_preInvoice).first()
+
 
     context = {
         
         'pdf_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.pdf"),
         'excel_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.xlsx"),
         'image_url': request.build_absolute_uri(settings.MEDIA_URL + f"preinvoices/{filename}.png"),  # Optional
+        'current_preInvoice':current_preInvoice
     }
 
     return render(request, 'preinvoice_result.html', context)

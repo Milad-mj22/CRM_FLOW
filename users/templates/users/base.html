@@ -23,51 +23,59 @@
         direction: rtl;
     }
 
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 250px;
+  height: 100%;
+  background: rgba(15, 15, 15, 0.5);
+  backdrop-filter: blur(15px); /* افکت شیشه‌ای */
+  -webkit-backdrop-filter: blur(15px); /* پشتیبانی سافاری */
+  padding-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1000;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  overflow-y: auto;
+  max-height: 100vh;
+  border-left: 1px solid rgba(29, 29, 29, 0.15); /* خط براق کناری */
+}
 
-    .sidebar {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: 250px;
-      height: 100%;
-      background-color: rgba(33, 37, 41, 0.65); /* پس‌زمینه شفاف تیره */
-      padding-top: 30px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      z-index: 1000;
-      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
-      transition: all 0.3s ease;
-      overflow-y: auto;   /* فعال کردن اسکرول عمودی در صورت نیاز */
-      max-height: 100vh;  /* محدود کردن ارتفاع به ارتفاع پنجره نمایشگر */
-    }
 
     .sidebar img {
       width: 140px;
       margin-bottom: 30px;
     }
 
-    .sidebar a {
-      color: #fff;
-      text-decoration: none;
-      padding: 12px 20px;
-      display: block;
-      width: 100%;
-      text-align: right;
-      transition: background 0.3s;
-      border-radius: 6px;
-      font-weight: 500;
-      font-size: 16px;
-    }
+.sidebar a {
+  color: #242323;
+  text-decoration: none;
+  padding: 12px 20px;
+  display: block;
+  width: 100%;
+  text-align: right;
+  transition: background 0.3s, color 0.3s;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 16px;
+   transition: all 0.3s ease;
+}
 
-    .sidebar a:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
+.sidebar a:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+    transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); /* Optional: برای زیبایی */
+}
     .main-content {
       margin-right: 250px;
       padding: 30px;
     }
+
+
 
 
 .user-info {
@@ -160,9 +168,9 @@
 
   {% if request.user.is_authenticated %}
     <div class="user-info">
-      <div class="avatar">
+      <!-- <div class="avatar">
         {{ request.user.username|first|upper }}
-      </div>
+      </div> -->
       <div class="user-details">
         <p><strong>کاربر:</strong> {{ request.user.username }}</p>
         <p><strong>سمت:</strong> {{ request.user.profile.job_position.name }}</p>
@@ -178,7 +186,7 @@
         <li>
             <a href="{{ item.url }}">
                 {% if item.icon %}
-                    <i class="{{ item.icon }}"></i>
+                    <i class="{{ item.icon }}   "></i>
                 {% endif %}
                 {{ item.title }}
             </a>

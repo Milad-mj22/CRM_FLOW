@@ -48,7 +48,7 @@ urlpatterns = [
     path('admin/steps/delete/<int:step_id>/', delete_step, name='delete_step'),
 
     path('preInvoice/', create_preinvoice_view, name='driver_list'),
-    path('preinvoice/preview/<str:filename>/', show_preinvoce_result, name='preview_preinvoice'),
+    path('preinvoice/preview/<int:current_preInvoice>/<str:filename>/', show_preinvoce_result, name='preview_preinvoice'),
     path('create-english-invoice/', create_english_invoice, name='create_english_invoice'),
     path('preinvoices_list/', user_preinvoices, name='user_preinvoices'),
     path('preinvoice_delete/delete/<int:pk>/', delete_preinvoice, name='delete_preinvoice'),
