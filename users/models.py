@@ -559,7 +559,12 @@ class IntroductionMethod(models.Model):
         return self.title
 
 
+class BuyerCategory(models.Model):
+    name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
+    description = models.TextField(blank=True, null=True, verbose_name='توضیحات')
 
+    def __str__(self):
+        return self.name
 
 class Buyer(models.Model):
 
@@ -602,6 +607,14 @@ class Buyer(models.Model):
 
     created_date = models.DateTimeField(default=timezone.now,null=True,blank=True)
 
+    categories = models.ManyToManyField(
+        BuyerCategory,
+        blank=True,
+        verbose_name='دسته‌بندی‌های خریدار'
+    )
+
+
+    is_active = models.BooleanField(default=True)
 
 
     def __str__(self):

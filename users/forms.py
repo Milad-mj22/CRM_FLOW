@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.forms.renderers import BaseRenderer
 from django.forms.utils import ErrorList
-from .models import BuyerAttribute, Location, Profile,Post_quill,jobs,SnappFoodList,cities,EntryExitLog
+from .models import BuyerAttribute, BuyerCategory, Location, Profile,Post_quill,jobs,SnappFoodList,cities,EntryExitLog
 from django import forms
 from .models import QuillPost , full_post , raw_material , mother_material
 from django import forms
@@ -336,7 +336,7 @@ class BuyerForm(forms.ModelForm):
     class Meta:
         model = Buyer
         fields = ['first_name', 'last_name', 'gender', 'phone_number', 'national_code','introduction_method',
-                  'province', 'city', 'address', 'details', 'nationality']
+                  'province', 'city', 'address', 'details', 'nationality', 'categories']
         labels = {
             'first_name': 'نام ',
             'last_name': 'نام خانوادگی',
@@ -349,12 +349,14 @@ class BuyerForm(forms.ModelForm):
             'address': 'آدرس',
             'details': 'توضیحات تکمیلی',
             'nationality': 'ملیت',
+            'categories': 'عضویت در دسته‌بندی‌ها',  # ← اضافه شده
         }
         widgets = {
             'gender': forms.Select(attrs={'class': 'form-control', 'size': 1}),  # 👈 ارتفاع dropdown
             'nationality': forms.Select(attrs={'class': 'form-control', 'size': 1}),
             'address': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
             'details': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'categories': forms.SelectMultiple(attrs={'class': 'form-control select2', 'size': 3})
         }
 
 
@@ -486,3 +488,12 @@ class JobForm(forms.ModelForm):
         }
 
       
+
+class BuyerCategoryForm(forms.ModelForm):
+    class Meta:
+        model = BuyerCategory
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام دسته‌بندی'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'توضیحات'}),
+        }
