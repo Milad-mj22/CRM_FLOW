@@ -1175,7 +1175,7 @@ def create_preinvoice_view(request):
 
         # selected_coops = CuttingSaw.objects.filter(id__in=selected_ids)
 
-        selected_coops = coops.objects.filter(id__in=selected_ids)
+        selected_coops = coops.objects.filter(id__in=selected_ids,is_active=True,is_sell=False)
 
         # Load template
 
@@ -1203,7 +1203,7 @@ def create_preinvoice_view(request):
 
 
         else:
-            template_path = 'media/templates/en_preinvoice_template.xlsx'
+            template_path = r'media\templates\en_preinvoice_template.xlsx'
 
         today_gregorian = today_gregorian.strftime('%Y/%m/%d')
 
@@ -1299,7 +1299,7 @@ def create_preinvoice_view(request):
         return response
 
     else:
-        coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order)
+        coops_final = coops.objects.filter(state__order=Step.objects.latest('order').order,is_active=True,is_sell=False)
 
 
 
@@ -1619,10 +1619,31 @@ def reject_delete_request(request, coop_id):
  
 
 
+
 @login_required
 def user_preinvoices(request):
-    preinvoices = PreInvoice.objects.filter(created_by=request.user).order_by('-created_at')
-    return render(request, 'preInvoice/preinvoice_list.html', {'preinvoices': preinvoices})
+    customer_id = request.GET.get("customer")
+    date = request.GET.get("date")
+
+    preinvoices = PreInvoice.objects.filter(created_by=request.user,is_sell = False)
+
+    if customer_id:
+        preinvoices = preinvoices.filter(customer_id=customer_id)
+
+    if date:
+        preinvoices = preinvoices.filter(created_at__date=date)
+
+    preinvoices = preinvoices.order_by("-created_at")
+
+    customers = Buyer.objects.all()
+
+    return render(request, "preInvoice/preinvoice_list.html", {
+        "preinvoices": preinvoices,
+        "customers": customers,
+        "selected_customer": customer_id,
+        "selected_date": date,
+    })
+
 
 @login_required
 def delete_preinvoice(request, pk):
@@ -1640,11 +1661,12 @@ def sell_preinvoice(request, pk):
         coop = item.coop
         coop.is_active = False
         coop.is_sell = True
+        coop.save()  # Save each modified coop
 
 
-    # عملیات تبدیل به فروش (مثلاً انتقال به مدل Invoice)
-    # TODO: implement real logic here
-    invoice.delete()  # فقط برای تست
+
+    invoice.is_sell = True
+    invoice.save()
     return redirect('user_preinvoices')
 
 @login_required

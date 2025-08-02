@@ -27,7 +27,43 @@
 
 <div class="container mt-5" dir="rtl">
   <div class="job-card">
-    <h3 class="text-center text-primary mb-4 fw-bold">📦 لیست پیش‌فاکتورهای ثبت‌شده</h3>
+    <h3 class="text-center text-primary mb-4 fw-bold">📦 لیست پیش‌فاکتورهای صادر شده</h3>
+
+
+
+<!-- فیلترها -->
+<div class="card mb-4 shadow-sm border-0" style="border-radius: 16px;">
+  <div class="card-body">
+    <form method="get" class="row gy-2 gx-3 align-items-center">
+      <div class="col-md-5">
+        <label for="customer" class="form-label fw-bold text-primary">👤 انتخاب مشتری</label>
+        <select name="customer" id="customer" class="form-select select2">
+          <option value="">-- همه مشتری‌ها --</option>
+          {% for customer in customers %}
+            <option value="{{ customer.id }}" {% if customer.id|stringformat:"s" == selected_customer %}selected{% endif %}>
+              {{ customer }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <label for="date" class="form-label fw-bold text-primary">📅 تاریخ صدور</label>
+        <input type="date" name="date" id="date" class="form-control" value="{{ selected_date }}">
+      </div>
+
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-outline-primary w-100 fw-bold">
+          🔎 اعمال فیلتر
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
 
     <div class="table-responsive">
       <table class="table table-bordered table-hover job-table text-center align-middle">

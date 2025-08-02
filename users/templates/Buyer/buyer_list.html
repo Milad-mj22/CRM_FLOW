@@ -1,91 +1,139 @@
 {% extends "users/base.html" %}
 {% load static %}
 {% block title %}{{ title }}{% endblock title %}
-
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/store.css' %}">
+
 <style>
-    .card {
-        border-radius: 16px;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
+  .buyer-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    transition: 0.3s ease;
+  }
+
+  .buyer-card:hover {
+    transform: scale(1.01);
+  }
+
+  .buyer-info {
+    direction: rtl;
+    text-align: right;
+    line-height: 1.8;
+  }
+
+  .buyer-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #333;
+  }
+
+  .buyer-meta {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .buyer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .btn-custom {
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+  }
+
+  .btn-history {
+    background-color: #eaf4ff;
+    color: #007bff;
+  }
+
+  .btn-edit {
+    background-color: #fff4e5;
+    color: #ff8800;
+  }
+
+  .btn-delete {
+    background-color: #ffe5e5;
+    color: #d11a2a;
+  }
+
+.buyer-actions {
+  display: flex;
+  flex-direction: row; /* ⬅️ make buttons inline */
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+
+  @media (max-width: 768px) {
+    .buyer-actions {
+      flex-direction: row;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      gap: 6px;
     }
-
-    .list-group-item {
-        padding: 1rem 1.5rem;
-        transition: background-color 0.3s ease;
-    }
-
-    .list-group-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    .buyer-info {
-        line-height: 1.6;
-    }
-
-    .btn-add {
-        border-radius: 10px;
-        padding: 0.6rem 1.2rem;
-        font-size: 1rem;
-        font-weight: 500;
-    }
-
-    .btn-edit {
-        padding: 0.4rem 0.8rem;
-        border-radius: 8px;
-        font-size: 0.875rem;
-    }
-
-    @media (max-width: 768px) {
-        .btn-add {
-            width: 100%;
-            margin-top: 1rem;
-        }
-
-        .btn-edit {
-            width: 100%;
-            margin-top: 0.5rem;
-        }
-
-        .d-flex.justify-content-between {
-            flex-direction: column;
-            align-items: flex-start !important;
-        }
-    }
+  }
 </style>
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-        <h2 class="text-right mb-2">لیست خریداران</h2>
-        <a href="{% url 'add_buyer' %}" class="btn btn-success btn-add">افزودن خریدار جدید</a>
-    </div>
+<div class="container mt-4" dir="rtl">
+  <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+    <h2 class="fw-bold text-primary mb-2">📋 لیست خریداران</h2>
+    <a href="{% url 'add_buyer' %}" class="btn btn-success btn-add btn-sm">➕ خریدار جدید</a>
+  </div>
 
-    {% if buyers %}
-        <div class="card">
-            <ul class="list-group list-group-flush">
-                {% for buyer in buyers %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-                        <div class="buyer-info w-75 text-right">
-                            <strong>{{ buyer.first_name }} {{ buyer.last_name }}</strong><br>
-                            <small class="text-muted">شماره تماس: {{ buyer.phone_number }}</small><br>
-                            {% if buyer.nationality %}
-                                <small class="text-muted">ملیت: {{ buyer.nationality.name }}</small>
-                            {% endif %}
-                        </div>
-                        <div class="mt-2 mt-md-0">
-                            <a href="{% url 'edit_buyer' buyer.id %}" class="btn btn-primary btn-edit">ویرایش</a>
-                        </div>
-                    </li>
+  <form method="get" class="mb-4">
+  <div class="input-group">
+<input type="text" name="q" placeholder="جستجو بر اساس نام، شماره یا ملیت..." value="{{ query|default:'' }}" class="form-control" />
 
+    <button type="submit" class="btn btn-outline-primary">🔍 جستجو</button>
+  </div>
+</form>
 
-
-                    
-                {% endfor %}
-            </ul>
+  {% if buyers %}
+  {% for buyer in buyers %}
+  <div class="buyer-card">
+    <div class="buyer-info d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 flex-wrap">
+      
+      <!-- Name + buttons in one line -->
+      <div class="d-flex align-items-center flex-wrap gap-2">
+        <div class="buyer-name mb-0">{{ buyer.first_name }} {{ buyer.last_name }}</div>
+        <div class="buyer-actions d-flex flex-row gap-2">
+          <a href="{% url 'buyer_detail' buyer.id %}" class="btn btn-history btn-sm btn-custom">📜 سوابق</a>
+          <a href="{% url 'edit_buyer' buyer.id %}" class="btn btn-edit btn-sm btn-custom">✏️ ویرایش</a>
+          <button class="btn btn-delete btn-sm btn-custom" onclick="confirmDelete('{{ buyer.id }}')">🗑 حذف</button>
         </div>
-    {% else %}
-        <p class="text-muted text-center mt-4">هیچ خریداری ثبت نشده است.</p>
-    {% endif %}
+      </div>
+
+      <!-- Metadata -->
+      <div class="d-flex flex-wrap gap-3 text-muted small">
+        <div>📱 {{ buyer.phone_number }}</div>
+        {% if buyer.nationality %}
+          <div>🌍 ملیت: {{ buyer.nationality.name }}</div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+{% endfor %}
+
+
+  {% else %}
+    <p class="text-muted text-center">هیچ خریداری ثبت نشده است.</p>
+  {% endif %}
 </div>
+
+<script>
+  function confirmDelete(id) {
+    if (confirm('آیا از حذف این خریدار مطمئن هستید؟')) {
+      window.location.href = `/buyers/delete/${id}/`;
+    }
+  }
+</script>
+
 {% endblock content %}

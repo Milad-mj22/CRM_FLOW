@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import buyer_attr_manage, buyer_dashboard, buyer_dashboard_view, buyer_login_view, buyer_logout_view, confirm_purchase_view, create_user_view, daily_report_view, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
+from .views import add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, confirm_purchase_view, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
         ,my_orders,add_raw_material,post_edit_quil\
         ,create_order,add_mother_material,show_order,snapp,show_restaurant_list,\
         restaurant_food_list,add_restaurant,print_order,foodRawMaterials,addfoodrawmaterial,show_food_material,night_food_order,\
@@ -101,6 +101,11 @@ urlpatterns = [
     path('buyers/', buyer_list, name='buyer_list'),
     path('buyers/add/', add_buyer, name='add_buyer'),
     path('buyers/edit/<int:pk>/', edit_buyer, name='edit_buyer'),
+    path('buyers/delete/<int:buyer_id>/', delete_buyer, name='delete_buyer'),
+    path('buyers/details/<int:buyer_id>/', buyer_detail, name='buyer_detail'),
+    path('buyers/activity/<int:buyer_id>/<str:activity_type>/', buyer_activity_detail, name='buyer_activity_detail'),
+    path('buyers/<int:buyer_id>/add-activity/', add_buyer_activity, name='add_buyer_activity'),
+
     path('buyers/dashboard/', buyer_dashboard, name='buyer_dashboard'),
     # path('buyers/login/', auth_views.LoginView.as_view(template_name='Buyer/buyer_login.html'), name='login'),
     # path('buyers/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
@@ -110,6 +115,7 @@ urlpatterns = [
     path('buyers/dashboard_person/', buyer_dashboard_view, name='person_buyer_dashboard'),
     path('buyers/logout/',buyer_logout_view, name='buyer_logout'),
     path('buyers/confirm/<int:log_id>/', confirm_purchase_view, name='confirm_purchase'),
+    path('buyers/factor/<int:pk>/', show_factor, name='show_factor'),
 
 
     path('users/admin/create-user/', create_user_view, name='create_user'),
