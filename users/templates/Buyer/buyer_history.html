@@ -84,9 +84,18 @@
 
   <!-- Activity Tabs -->
   <div class="activity-tabs">
-    {% for activity in activities %}
-      <button class="activity-tab" data-activity="{{ activity }}">{{ activity.title }}</button>
-    {% endfor %}
+
+
+  {% for activity in activities %}
+    <div class="activity-option" style="margin-bottom: 10px;">
+      <button class="activity-tab" data-activity="{{ activity.label }}">
+        <i class="{{ activity.icon }}" style="margin-left: 6px;"></i>
+        {{ activity.label }}
+      </button>
+    </div>
+  {% endfor %}
+
+
   </div>
 
   <!-- Activity Content -->

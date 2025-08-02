@@ -608,6 +608,7 @@ class Buyer(models.Model):
         return f"{self.first_name} - {self.last_name}"
     
 
+
 class BuyerActivity(models.Model):
     ACTIVITY_TYPE_CHOICES = [
         ('call', 'تماس تلفنی'),
@@ -620,8 +621,18 @@ class BuyerActivity(models.Model):
         ('factors', 'فاکتور ها و خرید'),
     ]
 
+    ACTIVITY_TYPE_ICONS = {
+    'call': 'fa-solid fa-phone',
+    'meeting': 'fa-solid fa-users',
+    'message': 'fa-solid fa-comment',
+    'email': 'fa-solid fa-envelope',
+    'whatsapp': 'fa-brands fa-whatsapp',
+    'note': 'fa-solid fa-sticky-note',
+    'factors': 'fa-solid fa-file-invoice',
+    }
+
     buyer = models.ForeignKey(
-        'Buyer',
+        Buyer,
         on_delete=models.CASCADE,
         related_name='activities',
         verbose_name="خریدار"
@@ -643,13 +654,22 @@ class BuyerActivity(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
     next_followup = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ پیگیری بعدی")
 
+
+    logo = models.ImageField(
+        upload_to='activity_logos/',
+        null=True,
+        blank=True,
+        verbose_name='لوگو فعالیت'
+    )
+
+
     class Meta:
         ordering = ['-timestamp']
         verbose_name = "فعالیت خریدار"
         verbose_name_plural = "فعالیت‌های خریدار"
 
     def __str__(self):
-        return f"{self.get_activity_type_display()} برای {self.buyer.name} - {self.title}"
+        return f"{self.get_activity_type_display()} برای {self.buyer.first_name} {self.buyer.last_name} - {self.title}"
 
     @classmethod
     def get_activity_type_display_by_index(cls, index_key):
@@ -659,7 +679,17 @@ class BuyerActivity(models.Model):
     @classmethod
     def get_activity_type_labels(cls):
         return [label for _, label in cls.ACTIVITY_TYPE_CHOICES]
-
+        
+    @classmethod
+    def get_activity_type_label_icon_list(cls):
+        return [
+            {
+                'value': key,
+                'label': label,
+                'icon': cls.ACTIVITY_TYPE_ICONS.get(key, 'fa-solid fa-question')
+            }
+            for key, label in cls.ACTIVITY_TYPE_CHOICES
+        ]
 class BuyerAttribute(models.Model):
     FIELD_TYPES = [
         ('text', 'متن'),

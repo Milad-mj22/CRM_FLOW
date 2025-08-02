@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from users.forms import LocationForm
-from .models import  Location, MenuItem, Profile
+from .models import  BuyerActivity, Location, MenuItem, Profile
 from .models import Tools,Post,Tools,Post_quill , jobs , Projects ,raw_material,create_order\
                     ,mother_material,FoodFilter,SnappFoodList,cities,FoodRawMaterial,mother_food,mode_raw_materials,\
                     Inventory,InventoryLog,Warehouse,RestaurantBranch,NightOrderRemainder,AllowedLocation,\
@@ -146,6 +146,10 @@ admin.site.register(EntryExitLog)
 
 
 admin.site.register(Location)
+
+admin.site.register(BuyerActivity)
+
+
 
 
 

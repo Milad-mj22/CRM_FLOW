@@ -2488,10 +2488,15 @@ def delete_buyer_attribute(request, attr_id):
 
 def buyer_detail(request, buyer_id):
     buyer = get_object_or_404(Buyer, id=buyer_id)
-    activities = BuyerActivity.get_activity_type_labels()
+    # activities = BuyerActivity.get_activity_type_labels()
+    activities = BuyerActivity.get_activity_type_label_icon_list()
+
+
+    
     return render(request, 'Buyer/buyer_history.html', {
         'buyer': buyer,
         'activities': activities,
+        
     })
 
 def buyer_activity_detail(request, buyer_id, activity_type):
