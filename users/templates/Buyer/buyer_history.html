@@ -89,6 +89,18 @@
       <div><strong>شماره تماس:</strong> {{ buyer.phone_number }}</div>
       <div><strong>آدرس:</strong> {{ buyer.address }}</div>
       <div><strong>تاریخ ثبت:</strong> {{ buyer.created_date|to_jalali }}</div>
+      <hr>
+    {% if buyer.categories.all %}
+      <div class="mt-2">
+        <strong>دسته‌بندی‌ها:</strong>
+        {% for category in buyer.categories.all %}
+          <span style="background-color: {{ category.color }}; color: white; padding: 4px 8px; border-radius: 8px; margin-left: 4px;" title="{{ category.description|default:'توضیحی ثبت نشده است'}}">
+            {{ category.name }}
+          </span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     </div>
   </div>
 

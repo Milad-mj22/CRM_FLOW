@@ -2294,8 +2294,9 @@ def buyer_list(request):
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
             Q(phone_number__icontains=query) |
-            Q(nationality__name__icontains=query)
-        )
+            Q(nationality__name__icontains=query)|
+            Q(categories__name__icontains=query)  # این خط اضافه شد
+        ).distinct()
 
         buyers = buyers.filter(is_active=True)
 

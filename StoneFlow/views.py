@@ -1142,7 +1142,10 @@ def convert_excel_to_pdf(excel_path, pdf_path):
     pythoncom.CoInitialize()  # 👈 مهم
     try:
         excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = False
+        try:
+            excel.Visible = False
+        except:
+            pass
 
         wb = excel.Workbooks.Open(excel_path)
         wb.ExportAsFixedFormat(0, pdf_path)  # 0 = PDF
@@ -1168,6 +1171,10 @@ def convert_str_price2float(price:str):
 def create_preinvoice_view(request):
     if request.method == 'POST':
         customer_id = request.POST.get('customer')
+        if customer_id is None:
+            return render(request, 'preinvoice_error_page.html', {'text': "مشتری انتخاب نشده است"})
+        
+
         customer = Buyer.objects.get(id=customer_id)
 
         selected_ids = request.POST.getlist('selected_coops')
@@ -1285,7 +1292,10 @@ def create_preinvoice_view(request):
         wb.save(excel_path)
 
         # Convert to PDF
-        convert_excel_to_pdf(excel_path, pdf_path)
+        try:
+            convert_excel_to_pdf(excel_path, pdf_path)
+        except:
+            return render(request, 'preinvoice_error_page.html', {'text': "خطا در تولید اکسل"})
 
         # Redirect to preview page
         return redirect("preview_preinvoice", filename=filename_base,current_preInvoice=current_preInvoice.id)

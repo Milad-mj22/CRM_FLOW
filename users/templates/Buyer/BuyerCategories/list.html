@@ -15,6 +15,10 @@
       {% for category in categories %}
       <tr>
         <td>{{ category.name }}</td>
+            <td>
+        <span style="display:inline-block;width:20px;height:20px;background-color:{{ category.color }};border-radius:4px;border:1px solid #aaa;"></span>
+        <small>{{ category.color }}</small>
+        </td>
         <td>{{ category.description }}</td>
         <td>
           <a href="{% url 'category_update' category.pk %}" class="btn btn-sm btn-warning">ویرایش</a>

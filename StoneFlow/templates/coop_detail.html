@@ -153,7 +153,7 @@ function printDiv(divId) {
                     <p><strong>وضعیت فعلی:</strong> <span class="badge bg-info text-dark">{{ coop.state.title }}</span></p>
                     <p><strong>مقدار:</strong> {{ coop.quantity }} {{coop.material.unit}} </p>
                     <p><strong>کاربر ثبت‌کننده:</strong> {{ coop.user.username }}</p>
-                    <p><strong>تاریخ ثبت:</strong> {{ coop.submitted_at|date:"Y-m-d H:i" }}</p>
+                    <p><strong>تاریخ ثبت:</strong> {{ coop.submitted_at|to_jalali }}</p>
                     <p><strong>قیمت نهایی کوپ:</strong> {{ coop.total_price }}</p>
 
 

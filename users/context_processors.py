@@ -16,7 +16,13 @@ def menu_items_processor(request):
     # 
         job = user.profile.job_position.name
 
-        items = user.profile.job_position.items.values()
+        items = user.profile.job_position.items.all()
+
+        # To efficiently fetch related submenus of these items (assuming submenus is a related_name)
+        items = items.prefetch_related('submenus')
+
+
+
         # گرفتن آیتم‌های منو مرتبط با نقش‌ها
         # items = MenuItem.objects.filter(roles__id__in=roles).distinct().order_by('order')
 

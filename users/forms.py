@@ -492,8 +492,9 @@ class JobForm(forms.ModelForm):
 class BuyerCategoryForm(forms.ModelForm):
     class Meta:
         model = BuyerCategory
-        fields = ['name', 'description']
+        fields = ['name' , 'color', 'description']
         widgets = {
+            'color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control form-control-color'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام دسته‌بندی'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'توضیحات'}),
         }

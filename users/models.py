@@ -29,6 +29,19 @@ class MenuItem(models.Model):
         return self.title
 
 
+class SubMenuItem(models.Model):
+    parent_menu = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='submenus', verbose_name="منوی والد")
+    title = models.CharField(max_length=100, verbose_name="عنوان زیرمنو")
+    icon = models.CharField(max_length=100, blank=True, verbose_name="آیکون (کلاس FontAwesome)")
+    url = models.CharField(max_length=200, verbose_name="آدرس URL")
+    order = models.PositiveIntegerField(default=0, verbose_name="ترتیب نمایش")
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.parent_menu.title} -> {self.title}"
+
 class jobs(models.Model):
     name = models.CharField(max_length=200)
     persian_name = models.CharField(max_length=200)
@@ -561,6 +574,7 @@ class IntroductionMethod(models.Model):
 
 class BuyerCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name='نام دسته‌بندی')
+    color = models.CharField(max_length=10, default='#cccccc')  # مثال: '#FF0000'
     description = models.TextField(blank=True, null=True, verbose_name='توضیحات')
 
     def __str__(self):
