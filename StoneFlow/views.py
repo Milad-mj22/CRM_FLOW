@@ -1168,6 +1168,9 @@ def convert_str_price2float(price:str):
 def create_preinvoice_view(request):
     if request.method == 'POST':
         customer_id = request.POST.get('customer')
+        if customer_id is None:
+            return redirect('error_page')
+
         customer = Buyer.objects.get(id=customer_id)
 
         selected_ids = request.POST.getlist('selected_coops')
