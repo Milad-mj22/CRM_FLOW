@@ -1,0 +1,127 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #f0f2f5, #e6e9f0);
+  }
+
+  .ticket-detail-card {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    margin-top: 40px;
+  }
+
+  .ticket-header h2 {
+    color: #0d6efd;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .ticket-status {
+    font-size: 1.1rem;
+    color: #555;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .message-bubble {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    position: relative;
+  }
+
+  .message-bubble strong {
+    color: #0d6efd;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .message-bubble small {
+    color: #888;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 5px;
+    text-align: left;
+  }
+
+  .reply-form .form-control,
+  .reply-form .form-select {
+    border-radius: 10px;
+  }
+
+  .btn-reply {
+    background: linear-gradient(to right, #0d6efd, #0b5ed7);
+    border: none;
+    color: white;
+    padding: 10px 30px;
+    border-radius: 12px;
+    transition: all 0.3s;
+  }
+
+  .btn-reply:hover {
+    background: linear-gradient(to right, #0b5ed7, #0a53be);
+  }
+</style>
+
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="ticket-detail-card " style="text-align: right; display: block;">
+        <div class="ticket-header">
+          <h2>{{ ticket.title }}</h2>
+        </div>
+        <div class="ticket-status">
+          وضعیت: {{ ticket.get_status_display }}
+        </div>
+
+        {% for msg in messages %}
+          <div class="message-bubble">
+            <strong>{{ msg.sender.username }}:</strong>
+            <p>{{ msg.message }}</p>
+            {% if msg.attachment %}
+              <a href="{{ msg.attachment.url }}" class="btn btn-sm btn-outline-primary mt-2">دانلود فایل</a>
+            {% endif %}
+            <small>{{ msg.sent_at }}</small>
+          </div>
+        {% empty %}
+          <p class="text-muted text-center">هنوز پیامی وجود ندارد.</p>
+        {% endfor %}
+
+        <hr class="my-4">
+
+        <form method="post" enctype="multipart/form-data" class="reply-form">
+          {% csrf_token %}
+          <div class="mb-3">
+            {{ form.message.label_tag }}  
+            {{ form.message }}
+            {% if form.message.errors %}
+              <div class="text-danger small mt-1">{{ form.message.errors.0 }}</div>
+            {% endif %}
+          </div>
+          <div class="mb-3">
+            {{ form.attachment.label_tag }}
+            {{ form.attachment }}
+            {% if form.attachment.errors %}
+              <div class="text-danger small mt-1">{{ form.attachment.errors.0 }}</div>
+            {% endif %}
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-reply">
+              <i class="fas fa-reply me-2"></i>ارسال پاسخ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

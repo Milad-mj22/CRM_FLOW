@@ -25,8 +25,14 @@
                 <ul class="list-group list-group-flush">
                     {% for buyer in top_buyers %}
                         <li class="list-group-item">
+
+                        <a href="{% url 'buyer_detail' buyer.customer__id %}">
                             {{ buyer.customer__first_name }} {{ buyer.customer__last_name }} - تعداد خرید: {{ buyer.total_purchases }}
+                        </a>
                         </li>
+
+
+
                     {% endfor %}
                 </ul>
             </div>
@@ -39,7 +45,8 @@
                 <ul class="list-group list-group-flush">
                     {% for item in top_products %}
                         <li class="list-group-item">
-                            {{ item.buyer__name }}: {{ item.top_product_name }} ({{ item.top_product_amount }})
+                            
+                            {{ item.buyer_name }}: {{ item.top_product_name }} ({{ item.top_product_amount }})
                         </li>
                     {% endfor %}
                 </ul>
@@ -48,6 +55,9 @@
     </div>
 
     <div class="row">
+
+
+
         <!-- مشتریان بدون خرید -->
         <div class="col-md-6 mb-4">
             <div class="card shadow">
@@ -55,7 +65,9 @@
                 <ul class="list-group list-group-flush">
                     {% for buyer in inactive_buyers %}
                         <li class="list-group-item">
-                            {{ buyer.first_name }} {{ buyer.last_name }}
+                            <a href="{% url 'buyer_detail' buyer.id %}">
+                                {{ buyer.first_name }} {{ buyer.last_name }}
+                            </a>
                         </li>
                     {% empty %}
                         <li class="list-group-item">همه مشتریان خرید داشته‌اند.</li>
@@ -64,16 +76,19 @@
             </div>
         </div>
 
+
         <!-- مشتریان وفادار -->
         <div class="col-md-6 mb-4">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">❤️ مشتریان وفادار</div>
                 <ul class="list-group list-group-flush">
-                    {% for buyer in loyal_buyers %}
-                        <li class="list-group-item">
-                            {{ buyer.buyer__first_name }} {{ buyer.buyer__last_name }} - تعداد خرید: {{ buyer.total_purchases }}
-                        </li>
-                    {% endfor %}
+                {% for buyer in loyal_buyers %}
+                    <li class="list-group-item">
+                        <a href="{% url 'buyer_detail' buyer.customer__id %}">
+                            {{ buyer.customer__first_name }} {{ buyer.customer__last_name }}
+                        </a> - تعداد خرید: {{ buyer.total_purchases }}
+                    </li>
+                {% endfor %}
                 </ul>
             </div>
         </div>

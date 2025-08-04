@@ -1,0 +1,130 @@
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(135deg, #f0f2f5, #e6e9f0);
+  }
+
+  .ticket-card {
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .ticket-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+  }
+
+  .btn-submit {
+    background: linear-gradient(to right, #0d6efd, #0b5ed7);
+    border: none;
+    color: white;
+    transition: 0.3s;
+    padding: 10px 30px;
+    border-radius: 12px;
+  }
+
+  .btn-submit:hover {
+    background: linear-gradient(to right, #0b5ed7, #0a53be);
+  }
+
+  .card-header {
+    background-color: transparent;
+    border-bottom: none;
+    text-align: center;
+  }
+
+  .card-header h4 {
+    font-weight: 700;
+    color: #0d6efd;
+  }
+
+  .icon-circle {
+    background-color: #0d6efd;
+    color: white;
+    padding: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+  }
+</style>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+      <div class="card ticket-card p-4">
+        <div class="card-header">
+          <div class="icon-circle">
+            <i class="fas fa-ticket-alt"></i>
+          </div>
+          <h4>ارسال تیکت پشتیبانی</h4>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Category -->
+            <div class="mb-4"style="text-align: right; display: block;">
+              <label for="id_category" class="form-label" >دسته‌بندی</label>
+              <select name="category" class="form-select" id="id_category" required>
+                <option value="">انتخاب دسته‌بندی</option>
+                {% for cat in categories %}
+                  <option value="{{ cat.id }}" {% if form.category.value == cat.id|stringformat:'s' %}selected{% endif %}>
+                    {{ cat.name }}
+                  </option>
+                {% endfor %}
+              </select>
+              {% if form.category.errors %}
+                <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Title -->
+            <div class="mb-4">
+              <label for="id_title" class="form-label" style="text-align: right; display: block;">عنوان تیکت</label>
+              <input type="text" name="title" class="form-control" id="id_title" placeholder="مثلاً: مشکل در پرداخت" value="{{ form.title.value|default:'' }}" required>
+              {% if form.title.errors %}
+                <div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Message -->
+            <div class="mb-4">
+              <label for="id_message" class="form-label"style="text-align: right; display: block;">متن پیام</label>
+              <textarea name="message" rows="5" class="form-control" id="id_message" placeholder="توضیح کامل مشکل خود را بنویسید..." required>{{ form.message.value|default:'' }}</textarea>
+              {% if form.message.errors %}
+                <div class="text-danger small mt-1">{{ form.message.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-end mt-4 row justify-content-center">
+              <button type="submit" class="btn btn-submit">
+                <i class="fas fa-paper-plane me-2 " ></i>ارسال تیکت
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

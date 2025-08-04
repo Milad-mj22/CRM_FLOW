@@ -61,6 +61,16 @@
   .buyer-info div {
     min-width: 180px;
   }
+
+.activity-tab {
+  transition: transform 0.2s ease;
+}
+
+.activity-tab:hover {
+  transform: translateY(-3px);
+}
+
+
 </style>
 
 <div class="container mt-5">
@@ -79,14 +89,35 @@
       <div><strong>شماره تماس:</strong> {{ buyer.phone_number }}</div>
       <div><strong>آدرس:</strong> {{ buyer.address }}</div>
       <div><strong>تاریخ ثبت:</strong> {{ buyer.created_date|to_jalali }}</div>
+      <hr>
+    {% if buyer.categories.all %}
+      <div class="mt-2">
+        <strong>دسته‌بندی‌ها:</strong>
+        {% for category in buyer.categories.all %}
+          <span style="background-color: {{ category.color }}; color: white; padding: 4px 8px; border-radius: 8px; margin-left: 4px;" title="{{ category.description|default:'توضیحی ثبت نشده است'}}">
+            {{ category.name }}
+          </span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
     </div>
   </div>
 
   <!-- Activity Tabs -->
   <div class="activity-tabs">
-    {% for activity in activities %}
-      <button class="activity-tab" data-activity="{{ activity }}">{{ activity.title }}</button>
-    {% endfor %}
+
+
+  {% for activity in activities %}
+    <div class="activity-option" style="margin-bottom: 10px;">
+      <button class="activity-tab" data-activity="{{ activity.label }}">
+        <i class="{{ activity.icon }}" style="margin-left: 6px;"></i>
+        {{ activity.label }}
+      </button>
+    </div>
+  {% endfor %}
+
+
   </div>
 
   <!-- Activity Content -->

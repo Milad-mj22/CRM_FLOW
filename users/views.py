@@ -16,9 +16,9 @@ from users.utils.utils import send_push_notification
 from .decorators import job_required
 from users.utils.CalulatedDistance import calculate_distance
 
-from .forms import BuyerAttributeForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
+from .forms import BuyerAttributeForm, BuyerCategoryForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
 from django.views import generic
-from .models import AllowedLocation, BuyerActivity, BuyerAttribute, BuyerAttributeValue, CapturedImage, Inventory, InventoryLog, MaterialComposition, MenuItem, Post, RemainingMaterialsUsage,Tools,full_post,Profile
+from .models import AllowedLocation, BuyerActivity, BuyerAttribute, BuyerAttributeValue, BuyerCategory, CapturedImage, Inventory, InventoryLog, MaterialComposition, MenuItem, Post, RemainingMaterialsUsage,Tools,full_post,Profile
 from django.shortcuts import get_object_or_404
 import numpy as np
 from django.http import HttpResponse
@@ -2278,24 +2278,27 @@ def edit_buyer(request, pk):
         form = BuyerForm(instance=buyer)
         buyer_attrs = BuyerAttribute.objects.all()
 
+        categories = BuyerCategory.objects.all()
 
-
-    return render(request, 'Buyer/buyer_edit.html', {'form': form, 'title': 'ویرایش خریدار','buyer_attributes':buyer_attrs})
+    return render(request, 'Buyer/buyer_edit.html', {'form': form, 'title': 'ویرایش خریدار','buyer_attributes':buyer_attrs,'categories':categories})
 
 
 from django.db.models import Q
 
 def buyer_list(request):
     query = request.GET.get('q')
-    buyers = Buyer.objects.all().order_by('-id')
+    buyers = Buyer.objects.all().order_by('-id').filter(is_active=True)
 
     if query:
         buyers = buyers.filter(
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
             Q(phone_number__icontains=query) |
-            Q(nationality__name__icontains=query)
-        )
+            Q(nationality__name__icontains=query)|
+            Q(categories__name__icontains=query)  # این خط اضافه شد
+        ).distinct()
+
+        buyers = buyers.filter(is_active=True)
 
     return render(request, 'Buyer/buyer_list.html', {
         'buyers': buyers,
@@ -2307,11 +2310,33 @@ def delete_buyer(request, buyer_id):
     buyer = get_object_or_404(Buyer, id=buyer_id)
     
     if request.method == 'POST':
-        buyer.delete()
-        messages.success(request, 'مشتری با موفقیت حذف شد.')
+        buyer.is_active = False
+        buyer.save()
+        messages.success(request, 'مشتری با موفقیت حذف شد، در انتظار تایید مدیر میباشد.')
         return redirect('buyer_list')  # replace with your actual buyer list url name
 
     return render(request, 'Buyer/confirm_delete.html', {'buyer': buyer})
+
+@login_required
+def review_delete_buyers_requests(request):
+    requests = Buyer.objects.filter(is_active=False)
+    return render(request, 'Buyer/buyer_delete_request.html', {'requests': requests})
+
+@login_required
+def confirm_delete_buyer_request(request,buyer_id):
+
+    delete_request = get_object_or_404(Buyer, id=buyer_id, is_active=False)
+    delete_request.delete()
+    return redirect('review_delete_buyers_requests')
+
+@login_required
+def reject_delete_buyer_request(request,buyer_id):
+
+    delete_request = get_object_or_404(Buyer, id=buyer_id, is_active=False)
+    delete_request.is_active=True
+    delete_request.save()
+    return redirect('review_delete_buyers_requests')
+
 
 from django.db.models import Count, Sum
 from django.shortcuts import render
@@ -2360,9 +2385,10 @@ def buyer_dashboard(request):
     # مشتریان بدون خرید (Buyers Without Purchase)
     all_buyers_with_purchase = sold_invoices.values_list('customer_id', flat=True)
     inactive_buyers = Buyer.objects.exclude(id__in=all_buyers_with_purchase)
+    inactive_buyers = inactive_buyers.filter(is_active=True)
 
     # مشتریان وفادار (Loyal Buyers - 5+ purchases)
-    loyal_buyers = sold_invoices.values('customer__id', 'customer__first_name').annotate(
+    loyal_buyers = sold_invoices.values('customer__id', 'customer__first_name','customer__last_name').annotate(
         total_purchases=Count('id')
     ).filter(total_purchases__gte=5).order_by('-total_purchases')
 
@@ -2488,11 +2514,17 @@ def delete_buyer_attribute(request, attr_id):
 
 def buyer_detail(request, buyer_id):
     buyer = get_object_or_404(Buyer, id=buyer_id)
-    activities = BuyerActivity.get_activity_type_labels()
+    # activities = BuyerActivity.get_activity_type_labels()
+    activities = BuyerActivity.get_activity_type_label_icon_list()
+
+
+    
     return render(request, 'Buyer/buyer_history.html', {
         'buyer': buyer,
         'activities': activities,
+        
     })
+
 
 def buyer_activity_detail(request, buyer_id, activity_type):
     activity_logs = BuyerActivity.objects.filter(buyer_id=buyer_id, activity_type=activity_type)
@@ -2823,3 +2855,32 @@ def manage_role_access(request):
         'menu_items': menu_items,
         'role_access': role_access,
     })
+
+
+
+
+def category_list(request):
+    categories = BuyerCategory.objects.all()
+    return render(request, 'Buyer/BuyerCategories/list.html', {'categories': categories})
+
+def category_create(request):
+    form = BuyerCategoryForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        return redirect('category_list')
+    return render(request, 'Buyer/BuyerCategories/form.html', {'form': form, 'title': 'افزودن دسته‌بندی'})
+
+def category_update(request, pk):
+    category = get_object_or_404(BuyerCategory, pk=pk)
+    form = BuyerCategoryForm(request.POST or None, instance=category)
+    if form.is_valid():
+        form.save()
+        return redirect('category_list')
+    return render(request, 'Buyer/BuyerCategories/form.html', {'form': form, 'title': 'ویرایش دسته‌بندی'})
+
+def category_delete(request, pk):
+    category = get_object_or_404(BuyerCategory, pk=pk)
+    if request.method == 'POST':
+        category.delete()
+        return redirect('category_list')
+    return render(request, 'Buyer/BuyerCategories/delete.html', {'category': category})

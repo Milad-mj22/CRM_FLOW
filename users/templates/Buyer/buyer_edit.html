@@ -4,6 +4,8 @@
 {% block content %}
 {% load widget_tweaks %}
 {% load custom_filters %}
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
 <link rel="stylesheet" href="{% static 'css/store.css' %}">
 <style>
@@ -119,15 +121,43 @@
 
 
 
+
                         <div class="d-flex flex-wrap justify-content-between">
                             <button type="submit" class="btn btn-success">ثبت اطلاعات</button>
                             <a href="{% url 'buyer_list' %}" class="btn btn-secondary">بازگشت</a>
                         </div>
+
+
+
+
+
+
+
+
+
+
+
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+
+<!-- jQuery (مطمئن شو قبل از Select2 اضافه شده) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    $('.select2').select2({
+      placeholder: "یک یا چند دسته‌بندی را انتخاب کنید",
+      dir: "rtl"
+    });
+  });
+</script>
 
 {% endblock content %}

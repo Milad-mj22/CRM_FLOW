@@ -1,3 +1,4 @@
+from django.http import HttpResponseForbidden
 from django.shortcuts import render
 
 # Create your views here.
@@ -12,6 +13,13 @@ import pandas as pd
 from django.shortcuts import render
 from .forms import CSVUploadForm
 from users.models import Buyer
+from django.db.models import Q
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Ticket, TicketCategory, TicketMessage
+from .forms import TicketForm, TicketMessageForm
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -131,3 +139,63 @@ def import_buyers_csv(request):
         form = CSVUploadForm()
 
     return render(request, 'import_csv.html', {'form': form})
+
+
+
+
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Ticket, TicketCategory, TicketMessage
+from .forms import TicketForm, TicketMessageForm
+from django.contrib.auth.decorators import login_required
+
+
+def ticket_list(request):
+    user = request.user
+    tickets = Ticket.objects.filter(
+        Q(user=user) | Q(category__viewers=user)
+    ).distinct().order_by('-created_at')
+    return render(request, 'tickets/ticket_list.html', {'tickets': tickets})
+
+
+
+@login_required
+def ticket_create(request):
+    if request.method == 'POST':
+        form = TicketForm(request.POST)
+        msg_form = TicketMessageForm(request.POST, request.FILES)
+        if form.is_valid() and msg_form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.user = request.user
+            ticket.save()
+            message = msg_form.save(commit=False)
+            message.ticket = ticket
+            message.sender = request.user
+            message.save()
+            return redirect('ticket_detail', ticket.id)
+    else:
+        categories = TicketCategory.objects.all()
+        form = TicketForm()
+        msg_form = TicketMessageForm()
+        return render(request, 'tickets/ticket_create.html', {'form': form, 'msg_form': msg_form,'categories':categories})
+    return redirect('error_page.html')
+@login_required
+def ticket_detail(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    messages = ticket.messages.all().order_by('sent_at')
+    if request.method == 'POST':
+
+        if request.user != ticket.user and request.user not in ticket.category.viewers.all():
+            return HttpResponseForbidden("شما اجازه مشاهده این تیکت را ندارید.")
+
+        form = TicketMessageForm(request.POST, request.FILES)
+        if form.is_valid():
+            msg = form.save(commit=False)
+            msg.ticket = ticket
+            msg.sender = request.user
+            msg.save()
+            return redirect('ticket_detail', ticket.id)
+    else:
+        form = TicketMessageForm()
+    return render(request, 'tickets/ticket_detail.html', {'ticket': ticket, 'messages': messages, 'form': form})
