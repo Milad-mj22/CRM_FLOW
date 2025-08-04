@@ -1,7 +1,7 @@
 {% extends 'users/base.html' %}
 {% block content %}
-<div class="container mt-5">
-  <h2>{{ title }}</h2>
+<div class="container mt-5"  style="text-align: right; display: block;">
+  <h2  style="text-align: right; display: block;">{{ title }}</h2>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}

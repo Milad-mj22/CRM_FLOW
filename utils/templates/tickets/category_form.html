@@ -1,0 +1,12 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block content %}
+  <h2>{% if object %}ویرایش{% else %}ایجاد{% endif %} دسته‌بندی</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">ذخیره</button>
+    <a href="{% url 'category_list' %}" class="btn btn-secondary">بازگشت</a>
+  </form>
+{% endblock %}
