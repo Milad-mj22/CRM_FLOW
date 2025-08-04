@@ -1,4 +1,5 @@
 {% extends "users/base.html" %}
+{% load static %}
 {% block content %}
 <style>
   .ticket-header {
@@ -75,8 +76,8 @@
   {% for ticket in tickets %}
     <a href="{% url 'ticket_detail' ticket.id %}" class="ticket-link">
       <div class="ticket-card">
-        <div class="ticket-title">{{ ticket.title }}</div>
-        <div class="ticket-status">وضعیت: {{ ticket.get_status_display }}</div>
+        <div class="ticket-title"  style="text-align: right; display: block;">{{ ticket.title }}</div>
+        <div class="ticket-status"  style="text-align: right; display: block;">وضعیت: {{ ticket.get_status_display }}</div>
       </div>
     </a>
   {% empty %}

@@ -218,6 +218,21 @@
   user-select: none;
 }
 
+
+.has-submenu:hover > a {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffc107;
+}
+
+.has-submenu:hover .submenu {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+
+
 /* موبایل */
 @media (max-width: 768px) {
   .menu {
@@ -301,23 +316,24 @@
   </div>
 
     <div class="menu">
-      {% for item in menu_items %}
-        <div class="menu-item">
-          <a href="{{ item.url }}">
-            {% if item.icon %}
-              <i class="{{ item.icon }}"></i>
-            {% endif %}
-            {{ item.title }}
-          </a>
-          {% if item.submenus %}
-            <div class="submenu">
-              {% for sub in item.submenus.all %}
-                <a href="{{ sub.url }}">{{ sub.title }}</a>
-              {% endfor %}
-            </div>
+    {% for item in menu_items %}
+<div class="menu-item{% if item.submenus.all|length > 0 %} has-submenu{% endif %}" 
+     {% if item.submenus.all|length > 0 %}data-has-submenu="true"{% endif %}>
+        <a href="{{ item.url }}">
+          {% if item.icon %}
+            <i class="{{ item.icon }}"></i>
           {% endif %}
-        </div>
-      {% endfor %}
+          {{ item.title }}
+        </a>
+        {% if item.submenus.all|length > 0 %}
+          <div class="submenu">
+            {% for sub in item.submenus.all %}
+              <a href="{{ sub.url }}">{{ sub.title }}</a>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
 
 
 
@@ -388,6 +404,40 @@
       });
     }
   });
+</script>
+<script>
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  if (isTouchDevice) {
+    document.querySelectorAll('.menu-item[data-has-submenu="true"]').forEach(item => {
+      const link = item.querySelector('a');
+      const submenu = item.querySelector('.submenu');
+
+      let timer;
+
+      link.addEventListener('click', function (e) {
+        // Prevent following the link immediately
+        e.preventDefault();
+
+        // Toggle submenu visibility manually
+        submenu.style.opacity = 1;
+        submenu.style.visibility = 'visible';
+        submenu.style.pointerEvents = 'auto';
+        submenu.style.transform = 'translateY(0)';
+
+        // Clear previous timer
+        if (timer) clearTimeout(timer);
+
+        // Hide after 4 seconds
+        timer = setTimeout(() => {
+          submenu.style.opacity = 0;
+          submenu.style.visibility = 'hidden';
+          submenu.style.pointerEvents = 'none';
+          submenu.style.transform = 'translateY(5px)';
+        }, 4000); // 4 seconds
+      });
+    });
+  }
 </script>
 
 
