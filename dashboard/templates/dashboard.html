@@ -56,19 +56,24 @@
       }
     });
 
-    function loadNextSection() {
-      if (nextPageIndex >= sections.length) return;
+function loadNextSection() {
+  if (nextPageIndex >= sections.length) return;
 
-      loading = true;
-      $("#loading").show();
+  loading = true;
+  $("#loading").show();
 
-      $.get(sections[nextPageIndex], function (html) {
-        $("#dashboard-content").append(html);
-        loading = false;
-        nextPageIndex++;
-        $("#loading").hide();
-      });
+  $.get(sections[nextPageIndex], function (html) {
+    $("#dashboard-content").append(html);
+    loading = false;
+    nextPageIndex++;
+    $("#loading").hide();
+
+    // ✅ بررسی اگر هنوز اسکرول ایجاد نشده، بخش بعدی را هم بارگذاری کن
+    if ((window.innerHeight >= document.body.scrollHeight) && nextPageIndex < sections.length) {
+      loadNextSection();
     }
+  });
+}
 
 
 
