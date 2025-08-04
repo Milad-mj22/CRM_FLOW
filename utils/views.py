@@ -21,7 +21,9 @@ from .models import Ticket, TicketCategory, TicketMessage
 from .forms import TicketForm, TicketMessageForm
 from django.contrib.auth.decorators import login_required
 
-
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from .models import TicketCategory
 
 @login_required
 def import_buyers_csv(request):
@@ -199,3 +201,9 @@ def ticket_detail(request, ticket_id):
     else:
         form = TicketMessageForm()
     return render(request, 'tickets/ticket_detail.html', {'ticket': ticket, 'messages': messages, 'form': form})
+
+
+
+
+
+

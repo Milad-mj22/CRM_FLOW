@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.forms.renderers import BaseRenderer
 from django.forms.utils import ErrorList
-from .models import BuyerAttribute, BuyerCategory, Location, Profile,Post_quill,jobs,SnappFoodList,cities,EntryExitLog
+from .models import BuyerActivity, BuyerAttribute, BuyerCategory, Location, Profile,Post_quill,jobs,SnappFoodList,cities,EntryExitLog
 from django import forms
 from .models import QuillPost , full_post , raw_material , mother_material
 from django import forms
@@ -497,4 +497,19 @@ class BuyerCategoryForm(forms.ModelForm):
             'color': forms.TextInput(attrs={'type': 'color', 'class': 'form-control form-control-color'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'نام دسته‌بندی'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'توضیحات'}),
+        }
+
+
+
+
+class BuyerActivityForm(forms.ModelForm):
+    class Meta:
+        model = BuyerActivity
+        fields = ['buyer', 'activity_type', 'title', 'description', 'next_followup']
+        widgets = {
+            'activity_type': forms.Select(attrs={'class': 'form-select'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
+            'next_followup': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'buyer': forms.Select(attrs={'class': 'form-select'}),
         }

@@ -658,6 +658,8 @@ class BuyerActivity(models.Model):
     'factors': 'fa-solid fa-file-invoice',
     }
 
+    
+
     buyer = models.ForeignKey(
         Buyer,
         on_delete=models.CASCADE,
@@ -689,6 +691,7 @@ class BuyerActivity(models.Model):
         verbose_name='لوگو فعالیت'
     )
 
+    
 
     class Meta:
         ordering = ['-timestamp']
@@ -717,6 +720,10 @@ class BuyerActivity(models.Model):
             }
             for key, label in cls.ACTIVITY_TYPE_CHOICES
         ]
+    
+    def convert_persian2rnglish(cls):
+        dict((fa, en) for en, fa in BuyerActivity.ACTIVITY_TYPE_CHOICES)
+
 class BuyerAttribute(models.Model):
     FIELD_TYPES = [
         ('text', 'متن'),

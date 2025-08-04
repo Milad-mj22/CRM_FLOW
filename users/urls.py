@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, category_create, category_delete, category_list, category_update, confirm_delete_buyer_request, confirm_purchase_view, reject_delete_buyer_request, review_delete_buyers_requests, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
+from .views import add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, category_create, category_delete, category_list, category_update, confirm_delete_buyer_request, confirm_purchase_view, delete_buyer_activity, edit_buyer_activity, reject_delete_buyer_request, review_delete_buyers_requests, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
         ,my_orders,add_raw_material,post_edit_quil\
         ,create_order,add_mother_material,show_order,snapp,show_restaurant_list,\
         restaurant_food_list,add_restaurant,print_order,foodRawMaterials,addfoodrawmaterial,show_food_material,night_food_order,\
@@ -71,7 +71,8 @@ urlpatterns = [
     # path('profile/<int:id>/register_entry/', register_exit, name='register_exit'),
     path('get_allowed_locations/', get_allowed_locations, name='register_entry'),
     path('profile/daily-report/', daily_report_view, name='daily_report'),
-
+    path('profile/daily-report/edit/<int:pk>/', edit_buyer_activity, name='edit_buyer_activity'),
+    path('profile/daily-report/delete/<int:pk>/', delete_buyer_activity, name='delete_buyer_activity'),
     
 
 
