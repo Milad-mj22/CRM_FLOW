@@ -1,178 +1,151 @@
 {% extends "users/base.html" %}
-{% block title %}ثبت گزارش روزانه{% endblock %}
 {% load static %}
-{% load widget_tweaks %}
 
 {% block content %}
-<style>
+<head>
+  <title>گزارش روزانه</title>
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
     body {
-        background-color: #f4f6f9;
-        font-family: 'Vazirmatn', sans-serif;
+      background: #f4f7fa;
+      font-family: "Vazirmatn", sans-serif;
     }
-
-    .form-container {
-        background-color: #fff;
-        padding: 2rem;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
+    .card {
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
-
-    .form-label {
-        font-weight: 600;
-        margin-bottom: 0.5rem;
+    .form-select, .form-control {
+      border-radius: 12px;
+      font-size: 15px;
     }
-
-    .form-select,
-    .form-control {
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        font-size: 1rem;
-        background-color: #f5f5f5;
-        border: 1px solid #e0e0e0;
-        transition: background-color 0.2s ease;
+    .activity-label {
+      font-weight: 500;
+      margin-right: 8px;
     }
-
-    .form-select:focus,
-    .form-control:focus {
-        background-color: #fff;
-        border-color: #007bff;
-        outline: none;
+    .activity-icon {
+      color: #6c757d;
+      margin-left: 5px;
     }
-
-    .btn-primary {
-        background-color: #007bff;
-        border: none;
-        border-radius: 10px;
-        padding: 0.7rem 1.5rem;
-        font-size: 1rem;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
-        max-width: 200px;
-        align-self: flex-end;
+    .report-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+      transition: background 0.2s;
     }
-
-    .btn-primary:hover {
-        background-color: #0056b3;
+    .report-item:hover {
+      background: #f1f1f1;
+      border-radius: 8px;
     }
-
-    .report-card {
-        background-color: #fff;
-        padding: 1.5rem;
-        border-radius: 16px;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-        margin-bottom: 1.5rem;
-        transition: box-shadow 0.3s ease;
+    .btn-icon {
+      margin-left: 5px;
     }
-
-    .report-card:hover {
-        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    .empty-report {
+      color: #999;
+      text-align: center;
+      padding: 20px;
     }
-
-    .report-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .report-content {
-        background-color: #f9f9f9;
-        padding: 0.75rem;
-        border-radius: 10px;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    }
-
-    .btn-edit {
-        font-size: 0.9rem;
-        padding: 0.4rem 0.9rem;
-        border-radius: 8px;
-    }
-
-    @media (max-width: 768px) {
-        .form-container {
-            padding: 1.25rem;
-        }
-
-        .btn-primary {
-            width: 100%;
-            max-width: none;
-        }
-
-        .report-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .btn-edit {
-            margin-top: 0.5rem;
-            width: 100%;
-        }
-    }
-</style>
-
-<script>
-function editReport(id, title, content) {
-    document.getElementById('id_title').value = title;
-    document.getElementById('id_content').value = content;
-
-    let hiddenInput = document.getElementById('report-id');
-    if (!hiddenInput) {
-        hiddenInput = document.createElement("input");
-        hiddenInput.type = "hidden";
-        hiddenInput.name = "report_id";
-        hiddenInput.id = "report-id";
-        document.querySelector("form").appendChild(hiddenInput);
-    }
-    hiddenInput.value = id;
-
-    document.querySelector("button[type=submit]").innerText = "ویرایش گزارش";
-}
-</script>
+  </style>
+</head>
 
 <div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-10 col-lg-8">
-            <h2 class="text-center text-dark mb-4">ثبت گزارش روزانه</h2>
+  <h3 class="mb-4 text-center fw-bold">ثبت گزارش روزانه</h3>
 
-            <div class="form-container mb-5 d-flex flex-column">
-                <form method="POST">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label" for="id_title">عنوان گزارش</label>
-                        {{ form.title|add_class:"form-select" }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="id_content">محتوای گزارش</label>
-                        {{ form.content|add_class:"form-control" }}
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary">ثبت گزارش</button>
-                    </div>
-                </form>
-            </div>
-
-            <h4 class="text-secondary text-center mb-4">گزارش‌های شما</h4>
-
-            {% for report in reports %}
-            <div class="report-card">
-                <div class="report-header">
-                    <strong class="text-primary">{{ report.date }} - {{ report.title }}</strong>
-                    {% if report.id == last_report_id %}
-                    <button class="btn btn-sm btn-outline-secondary btn-edit"
-                            onclick="editReport('{{ report.id }}', '{{ report.title }}', `{{ report.content|escapejs }}`)">
-                        ویرایش
-                    </button>
-                    {% endif %}
-                </div>
-                <div class="report-content">
-                    {{ report.content }}
-                </div>
-                <small class="text-muted d-block mt-2">ایجاد شده در: {{ report.created_at }}</small>
-            </div>
+  <!-- فرم ثبت گزارش -->
+  <div class="card mb-4 p-4">
+    <form method="post">
+      {% csrf_token %}
+      <div class="row mb-3" >
+        <div class="col-md-6 mb-3" style="text-align: right; display: block;">
+          <label for="buyer" class="form-label" >مشتری : </label>
+          <select id="buyer" name="buyer" class="form-select" required>
+            <option value="">انتخاب کنید</option>
+            {% for buyer in buyers %}
+              <option value="{{ buyer.id }}">{{ buyer.first_name }} {{ buyer.last_name }}</option>
             {% endfor %}
+          </select>
         </div>
-    </div>
+
+        <div class="col-md-6 mb-3" style="text-align: right; display: block;">
+          <label for="activity_type" class="form-label">نوع فعالیت</label>
+          <select id="activity_type" name="activity_type" class="form-select" required>
+            <option value="">انتخاب کنید</option>
+            {% for activity in activities %}
+              <option value="{{ activity.value }}">
+                {{ activity.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="row mb-3" >
+        <div class="col-md-6 mb-3" style="text-align: right; display: block;">
+          <label  class="form-label">عنوان فعالیت</label>
+          <input id="activity-title" type="text" name="activity_title" class="form-control" placeholder="مثلاً تماس با مشتری" required>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label class="form-label" style="text-align: right; display: block;">پیگیری بعدی</label>
+          <input type="date" name="next_followup" class="form-control">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" style="text-align: right; display: block;">توضیحات</label>
+        <textarea name="description" rows="4" class="form-control" placeholder="توضیحات فعالیت"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 fw-bold">
+        <i class="fa fa-save me-2"></i>ثبت گزارش
+      </button>
+    </form>
+  </div>
+
+  <!-- لیست گزارش‌ها -->
+  <div class="card p-4">
+    <h5 class="mb-3 fw-bold">گزارش‌های اخیر</h5>
+
+    {% for report in reports %}
+      <div class="report-item d-flex justify-content-between align-items-center">
+        <div>
+          {% for activity in activities %}
+            {% if activity.value == report.activity_type %}
+              <i class="{{ activity.icon }} activity-icon"></i>
+              <span class="activity-label ">{{ activity.label }}</span>
+            {% endif %}
+          {% endfor %}
+          <strong class="ms-2">{{ report.title }}</strong> - {{ report.buyer.first_name }} {{ report.buyer.last_name }}
+          <div class="text-muted small">{{ report.timestamp|date:"Y/m/d H:i" }}</div>
+        </div>
+        <div>
+          <a href="{% url 'edit_buyer_activity' report.id %}" class="btn btn-sm btn-outline-warning btn-icon" title="ویرایش">
+            <i class="fa fa-edit"></i>
+          </a>
+          <a href="{% url 'delete_buyer_activity' report.id %}" class="btn btn-sm btn-outline-danger btn-icon" title="حذف" onclick="return confirm('آیا مطمئن هستید؟');">
+            <i class="fa fa-trash"></i>
+          </a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty-report">گزارشی وجود ندارد.</div>
+    {% endfor %}
+  </div>
 </div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("activity_type");
+    const titleInput = document.getElementById("activity-title");
+
+    select.addEventListener("change", function () {
+      const selectedOption = select.options[select.selectedIndex];
+      if (selectedOption.value) {
+        titleInput.value = selectedOption.text;
+      } else {
+        titleInput.value = "";
+      }
+    });
+  });
+</script>
+
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 {% endblock %}

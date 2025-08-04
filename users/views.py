@@ -16,7 +16,7 @@ from users.utils.utils import send_push_notification
 from .decorators import job_required
 from users.utils.CalulatedDistance import calculate_distance
 
-from .forms import BuyerAttributeForm, BuyerCategoryForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
+from .forms import BuyerActivityForm, BuyerAttributeForm, BuyerCategoryForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
 from django.views import generic
 from .models import AllowedLocation, BuyerActivity, BuyerAttribute, BuyerAttributeValue, BuyerCategory, CapturedImage, Inventory, InventoryLog, MaterialComposition, MenuItem, Post, RemainingMaterialsUsage,Tools,full_post,Profile
 from django.shortcuts import get_object_or_404
@@ -2526,13 +2526,17 @@ def buyer_detail(request, buyer_id):
     })
 
 
-def buyer_activity_detail(request, buyer_id, activity_type):
-    activity_logs = BuyerActivity.objects.filter(buyer_id=buyer_id, activity_type=activity_type)
-    factors = PreInvoice.objects.filter(buyer=buyer_id)  # adapt based on your model
-    return render(request, 'Buyer/partials/activity_logs.html', {'logs': activity_logs,'factors':factors})
+def activity_presian2english(persian_activity):
+    try:
+        PERSIAN_TO_ENGLISH = dict((fa, en) for en, fa in BuyerActivity.ACTIVITY_TYPE_CHOICES)
+        return  PERSIAN_TO_ENGLISH.get(persian_activity)
+    except:
+        return ''
 
 def buyer_activity_detail(request, buyer_id, activity_type):
-    activity_logs = BuyerActivity.objects.filter(buyer_id=buyer_id, activity_type=activity_type)
+    activity_type_english = activity_presian2english(activity_type)
+    
+    activity_logs = BuyerActivity.objects.filter(buyer_id=buyer_id, activity_type=activity_type_english)
     factor_items = None
     total_price =0
     if activity_type=='فاکتور ها و خرید':
@@ -2563,6 +2567,7 @@ def add_buyer_activity(request, buyer_id):
         description = request.POST.get('description')
 
         BuyerActivity.objects.create(
+        
             buyer_id=buyer_id,
             activity_type=activity_type,
             description=description,
@@ -2597,37 +2602,83 @@ def show_factor(request, pk):
 #     return render(request, 'users/daily_report.html', {'form': form, 'reports': reports,'types':types})
 
 
-
 @login_required
 def daily_report_view(request):
-    reports = DailyReports.objects.filter(user=request.user).order_by('-created_at')
-    last_report = reports.first()  # Get only the most recent one
+    reports = BuyerActivity.objects.filter(created_by=request.user).order_by('-timestamp')
+    last_report = reports.first()
+
+    # داده‌هایی که می‌خواهی به قالب بفرستی
+    buyers = Buyer.objects.filter(is_active=True)
+    activities = BuyerActivity.get_activity_type_label_icon_list()  # یا هر مدل مرتبط
+
     if request.method == 'POST':
-        report_id = request.POST.get("report_id")
-        if report_id and str(last_report.id) == report_id:
-            # Edit only the last report
-            form = DailyReportForm(request.POST, instance=last_report)
-        else:
-            form = DailyReportForm(request.POST)
+        buyer_id = request.POST.get('buyer')
+        activity_type = request.POST.get('activity_type')
+        title = request.POST.get('activity_title')
+        description = request.POST.get('description')
+        next_followup = request.POST.get('next_followup')
 
-        if form.is_valid():
-            report = form.save(commit=False)
-            report.user = request.user
-            report.save()
-            return redirect('daily_report')
+        if buyer_id and activity_type:
+            # activity_type = get_object_or_404(ActivityType, id=activity_type_id)
+            buyer = get_object_or_404(Buyer, id=buyer_id)
 
-    else:
-        form = DailyReportForm()
+            if next_followup != '':
+            
+                BuyerActivity.objects.create(
+                    title = title,
+                    buyer=buyer,
+                    activity_type=activity_type,
+                    description=description,
+                    created_by=request.user,  # if your model supports it
+                    next_followup = next_followup
+                )
+
+            else:
+                BuyerActivity.objects.create(
+                    title = title,
+                    buyer=buyer,
+                    activity_type=activity_type,
+                    description=description,
+                    created_by=request.user,  # if your model supports it
+                )
+
+
+            return redirect('buyer_detail', buyer_id=buyer.id)
 
     return render(request, 'users/daily_report.html', {
-        'form': form,
         'reports': reports,
         'last_report_id': last_report.id if last_report else None,
+        'buyers': buyers,
+        'activities': activities,
     })
 
 
+@login_required
+def edit_buyer_activity(request, pk):
+    activity = get_object_or_404(BuyerActivity, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = DailyReportForm(request.POST, instance=activity)
+        if form.is_valid():
+            form.save()
+            return redirect('daily_report')
+    else:
+        form = DailyReportForm(instance=activity)
 
+    return render(request, 'Buyer/buyer_edit_activity.html', {
+        'form': form,
+        'activity': activity,
+    })
 
+@login_required
+def delete_buyer_activity(request, pk):
+    activity = get_object_or_404(BuyerActivity, pk=pk, user=request.user)
+    if request.method == 'POST':
+        activity.delete()
+        return redirect('daily_report')
+
+    return render(request, 'Buyer/buyer_delete_activity.html', {
+        'activity': activity,
+    })
 
 
 

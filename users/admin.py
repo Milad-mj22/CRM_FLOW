@@ -45,6 +45,7 @@ admin.site.register(ReportTitles)
 admin.site.register(DailyReports)
 admin.site.register(MenuItem)
 admin.site.register(SubMenuItem)
+admin.site.register(BuyerActivity)
 
 
 # admin.site.register(mode_raw_materials)
@@ -148,7 +149,6 @@ admin.site.register(EntryExitLog)
 
 admin.site.register(Location)
 
-admin.site.register(BuyerActivity)
 
 
 
