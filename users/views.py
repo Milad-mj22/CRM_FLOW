@@ -2345,9 +2345,9 @@ from django.db.models import Count, Sum
 from collections import defaultdict
 from StoneFlow.models import PreInvoice, PreInvoiceItem, Buyer  # Adjust import paths
 
-@login_required
-def buyer_dashboard(request):
-    # Only consider sold pre-invoices
+
+def calc_buyer_dashboard():
+        # Only consider sold pre-invoices
     sold_invoices = PreInvoice.objects.filter(is_sell=True)
 
     # مشتریان برتر (Top Buyers)
@@ -2404,8 +2404,18 @@ def buyer_dashboard(request):
         'chart_labels': chart_labels,
         'chart_data': chart_data,
     }
+    return context
 
+
+@login_required
+def buyer_dashboard(request):
+    context = calc_buyer_dashboard()
     return render(request, 'Buyer/buyer_dashboard.html', context)
+
+@login_required
+def buyer_dashboard_partial(request):
+    context = calc_buyer_dashboard()
+    return render(request, 'Buyer/buyer_dashboard_partial.html', context)
 
 
 
@@ -2935,3 +2945,6 @@ def category_delete(request, pk):
         category.delete()
         return redirect('category_list')
     return render(request, 'Buyer/BuyerCategories/delete.html', {'category': category})
+
+
+

@@ -1,12 +1,12 @@
 from django.urls import path
-from .views import add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, category_create, category_delete, category_list, category_update, confirm_delete_buyer_request, confirm_purchase_view, delete_buyer_activity, edit_buyer_activity, reject_delete_buyer_request, review_delete_buyers_requests, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
+from .views import add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_partial, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, category_create, category_delete, category_list, category_update, confirm_delete_buyer_request, confirm_purchase_view, delete_buyer_activity, edit_buyer_activity, reject_delete_buyer_request, review_delete_buyers_requests, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
         ,my_orders,add_raw_material,post_edit_quil\
         ,create_order,add_mother_material,show_order,snapp,show_restaurant_list,\
         restaurant_food_list,add_restaurant,print_order,foodRawMaterials,addfoodrawmaterial,show_food_material,night_food_order,\
         load_temp,CustomLogoutView,add_store,success_page,\
         show_store,submit_data,show_test,take_store,confrim_take_store,log_view_store,\
         register_entry,register_exit,get_allowed_locations,histoty_entry,update_prices, show_night_order_material,\
-        add_buyer,edit_buyer,buyer_list , subscribe , send_test_notification, user_list_view
+        add_buyer,edit_buyer,buyer_list , subscribe , send_test_notification, user_list_view 
 
 from menu.views import set_sold_out
         
@@ -111,6 +111,7 @@ urlpatterns = [
     path('buyers/admin/review_delete_buyers_requests/', review_delete_buyers_requests, name='review_delete_buyers_requests'),
 
     path('buyers/dashboard/', buyer_dashboard, name='buyer_dashboard'),
+    path('buyers/dashboard_partial/', buyer_dashboard_partial, name='buyer_dashboard_partial'),
     # path('buyers/login/', auth_views.LoginView.as_view(template_name='Buyer/buyer_login.html'), name='login'),
     # path('buyers/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
@@ -145,6 +146,7 @@ urlpatterns = [
     path('buyer-attributes/admin/delete/<int:attr_id>/', delete_buyer_attribute, name='delete_buyer_attribute'),
 
     path('manage_role_access/admin/', manage_role_access, name='manage_role_access'),
+
 
 
 
