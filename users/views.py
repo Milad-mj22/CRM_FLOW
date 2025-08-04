@@ -82,13 +82,22 @@ BACKEND_ENDPOINT = 'http://127.0.0.1:8000'
 
 from django.contrib.auth.views import LogoutView
 
+
+
+
 class CustomLogoutView(LogoutView):
     def get(self, request, *args, **kwargs):
-        print('milad'*20)
         messages.success(request, "You have been logged out successfully.")
+        logout(request)
+
         return redirect(to='login')
         return redirect('users-register')
         return self.post(request, *args, **kwargs)
+
+def logout_view(request):
+    logout(request)
+    return render(request, 'users/logout.html')
+
 
 
 def home(request):
@@ -311,13 +320,23 @@ class CustomLoginView(LoginView):
             self.request.user.profile
         except ObjectDoesNotExist:
             messages.error(self.request, 'پروفایل شما وجود ندارد. لطفاً با مدیر سیستم تماس بگیرید.')
+            
             return redirect(reverse_lazy('login'))
+
+
 
         return response
 
 
 
+@login_required
+def post_login_redirect(request):
 
+    job_name = request.user.profile.job_position.name
+    if hasattr(request.user, 'profile') and (job_name == 'CEO' or job_name == 'Technical Manager' or job_name == 'Programmer'):
+        return redirect('mian_dashboard')  # نام view یا نام urlpattern
+
+    return redirect('users-home')  # نام view یا نام urlpattern
 
 
 

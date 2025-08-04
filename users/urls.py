@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_partial, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, category_create, category_delete, category_list, category_update, confirm_delete_buyer_request, confirm_purchase_view, delete_buyer_activity, edit_buyer_activity, reject_delete_buyer_request, review_delete_buyers_requests, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
+from .views import add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_partial, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, category_create, category_delete, category_list, category_update, confirm_delete_buyer_request, confirm_purchase_view, delete_buyer_activity, edit_buyer_activity, logout_view, post_login_redirect, reject_delete_buyer_request, review_delete_buyers_requests, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
         ,my_orders,add_raw_material,post_edit_quil\
         ,create_order,add_mother_material,show_order,snapp,show_restaurant_list,\
         restaurant_food_list,add_restaurant,print_order,foodRawMaterials,addfoodrawmaterial,show_food_material,night_food_order,\
@@ -17,8 +17,10 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('', home, name='users-home'),
+    path('redirect_after_login/', post_login_redirect, name='post_login_redirect'),
     path('register/', RegisterView.as_view(), name='users-register'),
-    path('logout/', CustomLogoutView.as_view(), name='logout'),
+
+    path("logout/", logout_view, name="logout"),
     path('profile/', profile, name='users-profile'),
     path('tools/',tools, name='tools'),
     path('tools/snapp',snapp, name='tools'),
