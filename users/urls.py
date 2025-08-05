@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, category_create, category_delete, category_list, category_update, confirm_delete_buyer_request, confirm_purchase_view, delete_buyer_activity, edit_buyer_activity, reject_delete_buyer_request, review_delete_buyers_requests, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
+from .views import  add_buyer_activity, buyer_activity_detail, buyer_attr_manage, buyer_dashboard, buyer_dashboard_view, buyer_detail, buyer_login_view, buyer_logout_view, category_create, category_delete, category_list, category_update, confirm_delete_buyer_request, confirm_delete_view, confirm_purchase_view, delete_buyer_activity, edit_buyer_activity, mother_material_add, mother_material_edit, mother_material_list, raw_material_add, raw_material_delete, raw_material_edit, raw_material_list, reject_delete_buyer_request, review_delete_buyers_requests, show_factor,create_user_view, daily_report_view, delete_buyer, delete_buyer_attribute, delete_user, edit_user, error_page, home, job_create_view, job_delete_view, job_edit_view, job_list_view, manage_role_access, material_composition_view, no_access, profile, RegisterView, save_subscription, send_notification, send_test_notification, show_menu_options,tools \
         ,my_orders,add_raw_material,post_edit_quil\
         ,create_order,add_mother_material,show_order,snapp,show_restaurant_list,\
         restaurant_food_list,add_restaurant,print_order,foodRawMaterials,addfoodrawmaterial,show_food_material,night_food_order,\
@@ -41,6 +41,20 @@ urlpatterns = [
     path('orders/print_order/<int:id>', print_order, name='order-show'),
 
 
+
+
+
+    path('mother-materials/', mother_material_list, name='mother_material_list'),
+    path('mother-materials/add/', mother_material_add, name='mother_material_add'),
+    path('mother-materials/<int:pk>/edit/', mother_material_edit, name='mother_material_edit'),
+    path('mother-materials/<int:pk>/delete/', confirm_delete_view, name='mother_material_delete'),
+
+
+    # Raw material urls
+    path('raw-materials/', raw_material_list, name='raw_material_list'),
+    path('raw-materials/add/', raw_material_add, name='raw_material_add'),
+    path('raw-materials/edit/<int:pk>/', raw_material_edit, name='raw_material_edit'),
+    path('raw-materials/delete/<int:pk>/', raw_material_delete, name='raw_material_delete'),
     
     path('profile/create_order', create_order, name='create_post'),
     path('profile/my_orders', my_orders, name='my_posts'),
@@ -145,6 +159,10 @@ urlpatterns = [
     path('buyer-attributes/admin/delete/<int:attr_id>/', delete_buyer_attribute, name='delete_buyer_attribute'),
 
     path('manage_role_access/admin/', manage_role_access, name='manage_role_access'),
+
+
+
+
 
 
 

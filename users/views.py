@@ -16,7 +16,7 @@ from users.utils.utils import send_push_notification
 from .decorators import job_required
 from users.utils.CalulatedDistance import calculate_distance
 
-from .forms import BuyerActivityForm, BuyerAttributeForm, BuyerCategoryForm, JobForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
+from .forms import BuyerActivityForm, BuyerAttributeForm, BuyerCategoryForm, JobForm, MotherMaterialForm, RawMaterialForm, RegisterForm, LoginForm, UpdateUserForm, UpdateProfileForm
 from django.views import generic
 from .models import AllowedLocation, BuyerActivity, BuyerAttribute, BuyerAttributeValue, BuyerCategory, CapturedImage, Inventory, InventoryLog, MaterialComposition, MenuItem, Post, RemainingMaterialsUsage,Tools,full_post,Profile
 from django.shortcuts import get_object_or_404
@@ -2935,3 +2935,90 @@ def category_delete(request, pk):
         category.delete()
         return redirect('category_list')
     return render(request, 'Buyer/BuyerCategories/delete.html', {'category': category})
+
+
+
+
+from django.views.generic import ListView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+
+# --- MOTHER MATERIAL ---
+
+
+def mother_material_list(request):
+    materials = MotherMaterial.objects.all()
+    return render(request, 'materials/mother_material_list.html', {'materials': materials})
+
+
+def raw_material_list(request):
+    materials = raw_material.objects.all()
+    return render(request, 'materials/raw_material_list.html', {'materials': materials})
+
+
+def mother_material_edit(request, pk):
+    item = get_object_or_404(MotherMaterial, pk=pk)
+    if request.method == 'POST':
+        form = MotherMaterialForm(request.POST, request.FILES, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('mother_material_list')
+    else:
+        form = MotherMaterialForm(instance=item)
+    return render(request, 'materials/mother_material_form.html', {'form': form})
+
+
+def confirm_delete_view(request, pk):
+    obj = get_object_or_404(MotherMaterial, pk=pk)
+    if request.method == 'POST':
+        obj.delete()
+        return redirect('mother_material_list')
+    return render(request, 'materials/mother_material_confirm_delete.html', {'materials': obj})
+
+
+def mother_material_add(request):
+    if request.method == "POST":
+        form = MotherMaterialForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('mother_material_list')
+    else:
+        form = MotherMaterialForm()
+    return render(request, 'materials/mother_material_form.html', {'form': form, 'title': 'افزودن ماده اولیه مادر'})
+
+
+
+
+
+# --- Raw Material ---
+
+def raw_material_list(request):
+    materials = raw_material.objects.all()
+    return render(request, 'materials/raw_material_list.html', {'materials': materials})
+
+def raw_material_add(request):
+    if request.method == 'POST':
+        form = RawMaterialForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('raw_material_list')
+    else:
+        form = RawMaterialForm()
+    return render(request, 'materials/raw_material_form.html', {'form': form, 'title': 'افزودن ماده اولیه'})
+
+def raw_material_edit(request, pk):
+    item = get_object_or_404(raw_material, pk=pk)
+    if request.method == 'POST':
+        form = RawMaterialForm(request.POST, request.FILES, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('raw_material_list')
+    else:
+        form = RawMaterialForm(instance=item)
+    return render(request, 'materials/raw_material_form.html', {'form': form, 'title': 'ویرایش ماده اولیه'})
+
+def raw_material_delete(request, pk):
+    item = get_object_or_404(raw_material, pk=pk)
+    if request.method == 'POST':
+        item.delete()
+        return redirect('raw_material_list')
+    return render(request, 'materials/mother_material_confirm_delete.html', {'object': item, 'title': 'حذف ماده اولیه'})

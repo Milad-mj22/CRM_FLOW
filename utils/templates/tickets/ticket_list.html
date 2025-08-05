@@ -1,0 +1,87 @@
+{% extends "users/base.html" %}
+{% load static %}
+{% block content %}
+<style>
+  .ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+
+  .ticket-header h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  .ticket-header a {
+    background-color: #4a90e2;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+  }
+
+  .ticket-header a:hover {
+    background-color: #357ab7;
+  }
+
+  .ticket-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .ticket-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+  }
+
+  .ticket-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .ticket-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+  }
+
+  .ticket-status {
+    font-size: 14px;
+    color: #666;
+  }
+
+  .ticket-link {
+    text-decoration: none;
+    color: inherit;
+  }
+</style>
+
+<div class="ticket-header">
+  <h2>لیست تیکت‌های من</h2>
+  <a href="{% url 'ticket_create' %}">
+    <i class="fas fa-plus-circle me-1"></i> ارسال تیکت جدید
+  </a>
+</div>
+
+<div class="ticket-list">
+  {% for ticket in tickets %}
+    <a href="{% url 'ticket_detail' ticket.id %}" class="ticket-link">
+      <div class="ticket-card">
+        <div class="ticket-title"  style="text-align: right; display: block;">{{ ticket.title }}</div>
+        <div class="ticket-status"  style="text-align: right; display: block;">وضعیت: {{ ticket.get_status_display }}</div>
+      </div>
+    </a>
+  {% empty %}
+    <p>تیکتی یافت نشد.</p>
+  {% endfor %}
+</div>
+{% endblock %}
