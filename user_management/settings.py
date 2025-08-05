@@ -196,7 +196,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # STATIC_ROOT = r'C:\Users\Administrator\Desktop\Kitchen_Flow\staticfiles'
 
 
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/redirect_after_login/'
 LOGIN_URL = 'login'
 
 

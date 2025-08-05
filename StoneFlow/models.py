@@ -321,5 +321,3 @@ class PreInvoiceItem(models.Model):
     def __str__(self):
         return f"آیتم {self.coop.material.name} برای {self.pre_invoice}"
     
-
-

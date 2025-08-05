@@ -234,7 +234,7 @@
 
 
 /* موبایل */
-@media (max-width: 768px) {
+@media (max-width: 1380px) {
   .menu {
     display: none; /* ابتدا مخفی */
     flex-direction: column;
@@ -361,7 +361,7 @@
         <div><strong>{{ user.username }}</strong></div>
         <div style="font-size: 12px;">{{ user.profile.job_position.name }}</div>
       </div>
-      <a href="/login/" class="text-white"><i class="fas fa-sign-out-alt"></i></a>
+      <a href="/logout" class="text-white"><i class="fas fa-sign-out-alt"></i>خروج</a>
     {% else %}
       <a href="/login/" class="text-white"><i class="fas fa-sign-in-alt"></i> ورود</a>
     {% endif %}
@@ -376,7 +376,6 @@
   </div>
 
   <script src="{% static 'js/popper.min.js' %}"></script>
-  <script src="{% static 'js/bootstrap.min.js' %}"></script>
   <script src="{% static 'js/all.min.js' %}"></script>
   <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
 

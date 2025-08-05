@@ -82,13 +82,22 @@ BACKEND_ENDPOINT = 'http://127.0.0.1:8000'
 
 from django.contrib.auth.views import LogoutView
 
+
+
+
 class CustomLogoutView(LogoutView):
     def get(self, request, *args, **kwargs):
-        print('milad'*20)
         messages.success(request, "You have been logged out successfully.")
+        logout(request)
+
         return redirect(to='login')
         return redirect('users-register')
         return self.post(request, *args, **kwargs)
+
+def logout_view(request):
+    logout(request)
+    return render(request, 'users/logout.html')
+
 
 
 def home(request):
@@ -311,13 +320,23 @@ class CustomLoginView(LoginView):
             self.request.user.profile
         except ObjectDoesNotExist:
             messages.error(self.request, 'پروفایل شما وجود ندارد. لطفاً با مدیر سیستم تماس بگیرید.')
+            
             return redirect(reverse_lazy('login'))
+
+
 
         return response
 
 
 
+@login_required
+def post_login_redirect(request):
 
+    job_name = request.user.profile.job_position.name
+    if hasattr(request.user, 'profile') and (job_name == 'CEO' or job_name == 'Technical Manager' or job_name == 'Programmer'):
+        return redirect('mian_dashboard')  # نام view یا نام urlpattern
+
+    return redirect('users-home')  # نام view یا نام urlpattern
 
 
 
@@ -2345,9 +2364,9 @@ from django.db.models import Count, Sum
 from collections import defaultdict
 from StoneFlow.models import PreInvoice, PreInvoiceItem, Buyer  # Adjust import paths
 
-@login_required
-def buyer_dashboard(request):
-    # Only consider sold pre-invoices
+
+def calc_buyer_dashboard():
+        # Only consider sold pre-invoices
     sold_invoices = PreInvoice.objects.filter(is_sell=True)
 
     # مشتریان برتر (Top Buyers)
@@ -2404,8 +2423,18 @@ def buyer_dashboard(request):
         'chart_labels': chart_labels,
         'chart_data': chart_data,
     }
+    return context
 
+
+@login_required
+def buyer_dashboard(request):
+    context = calc_buyer_dashboard()
     return render(request, 'Buyer/buyer_dashboard.html', context)
+
+@login_required
+def buyer_dashboard_partial(request):
+    context = calc_buyer_dashboard()
+    return render(request, 'Buyer/buyer_dashboard_partial.html', context)
 
 
 
@@ -2935,3 +2964,6 @@ def category_delete(request, pk):
         category.delete()
         return redirect('category_list')
     return render(request, 'Buyer/BuyerCategories/delete.html', {'category': category})
+
+
+

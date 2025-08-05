@@ -1,7 +1,7 @@
 from django.urls import path
 
 
-from .views import  approve_delete_request, create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, cutting_factory_create_view, cutting_factory_delete_view, cutting_factory_edit_view, cutting_factory_view, delete_driver_view, delete_group, delete_preinvoice, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, preinvoice_detail, price_attribute_list, register_driver, reject_delete_request, request_delete_coop, review_delete_requests, sell_preinvoice, show_preinvoce_result, steps_list, user_preinvoices
+from .views import  approve_delete_request, coop_dashboard_partial, create_coope , coops_by_state , coop_detail,coop_dashboard,coop_state_detail, create_english_invoice, create_preinvoice_view, cutting_factory_create_view, cutting_factory_delete_view, cutting_factory_edit_view, cutting_factory_view, delete_driver_view, delete_group, delete_preinvoice, delete_step, driver_list_view, dynamic_step_view, edit_driver, export_group_excel, manage_access, manage_attribute_groups, manage_coop_attributes, manage_step, preinvoice_detail, price_attribute_list, register_driver, reject_delete_request, request_delete_coop, review_delete_requests, sell_preinvoice, show_preinvoce_result, steps_list, user_preinvoices
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -21,6 +21,7 @@ urlpatterns = [
     
     
     path('dashboard/', coop_dashboard, name='coop_dashboard'),
+    path('partial_dashboard/', coop_dashboard_partial, name='coop_dashboard_partial'),
 
     path('register/driver/', register_driver, name='register_driver'),
     path('drivers/', driver_list_view, name='driver_list'),
