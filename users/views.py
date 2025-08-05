@@ -2319,9 +2319,16 @@ def buyer_list(request):
 
         buyers = buyers.filter(is_active=True)
 
+
+    try:
+        len_buyer = len(buyers)
+    except:
+        len_buyer = 0
     return render(request, 'Buyer/buyer_list.html', {
+        'counts' : len_buyer,
         'buyers': buyers,
         'query': query,
+        
     })
 
 @login_required
