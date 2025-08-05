@@ -513,3 +513,29 @@ class BuyerActivityForm(forms.ModelForm):
             'next_followup': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'buyer': forms.Select(attrs={'class': 'form-select'}),
         }
+
+
+
+class MotherMaterialForm(forms.ModelForm):
+    class Meta:
+        model = mother_material
+        fields = '__all__'
+        labels = {
+            'name': 'نام',
+            'describe': 'کد',
+            'image': 'تصویر',
+            'mode': 'حالت',
+        }
+
+class RawMaterialForm(forms.ModelForm):
+    class Meta:
+        model = raw_material
+        fields = '__all__'
+        labels = {
+            'name': 'نام',
+            'describe': 'کد',
+            'unit': 'واحد اندازه گیری',
+            'image': 'تصویر',
+            'mother': 'ماده اولیه مادر',
+            'mode': 'حالت',
+        }
