@@ -228,6 +228,46 @@ def coop_dashboard(request):
     })
 
 
+
+def coop_dashboard_partial(request):
+    material_id = request.GET.get('material_id')
+    materials = raw_material.objects.all()
+    selected_material = None
+    qs = coops.objects.all()
+
+    if material_id:
+        qs = qs.filter(material_id=material_id)
+        selected_material = raw_material.objects.filter(id=material_id).first()
+
+    # # آماده‌سازی داده برای چارت‌ها
+    # state_counts = {}
+    # for state_code, state_name in coops._meta.get_field('state').choices:
+    #     state_counts[state_name] = qs.filter(state=state_code).count()
+
+
+    from django.db.models import Count
+
+    # شمارش تعداد کوپ‌ها در هر وضعیت (مرحله)
+    state_counts_raw = qs.values('state__title').annotate(count=Count('id'))
+
+    # تبدیل به دیکشنری قابل استفاده: { 'عنوان وضعیت': تعداد }
+    state_counts = {
+        item['state__title']: item['count']
+        for item in state_counts_raw
+    }
+
+
+
+    chart_labels = list(state_counts.keys())
+    chart_data = list(state_counts.values())
+
+    return render(request, 'coop_dashboard_partial.html', {
+        'materials': materials,
+        'selected_material': selected_material,
+        'chart_labels': chart_labels,
+        'chart_data': chart_data,
+    })
+
 from django.db import transaction
 # @transaction.atomic
 @login_required
