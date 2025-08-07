@@ -2,15 +2,14 @@
 {% load static %}
 {% block title %}{{ title }}{% endblock title %}
 {% block content2 %}
-<!DOCTYPE html>
-<html lang="fa">
+
 <head>
     <meta charset="UTF-8">
     <title>داشبورد مشتریان</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .scroll-list {
-            max-height: 300px;
+            max-height: 400px; /* ارتفاع برای حدود 10 آیتم */
             overflow-y: auto;
         }
 
@@ -25,6 +24,12 @@
 
         .scroll-list::-webkit-scrollbar-track {
             background: transparent;
+        }
+
+        .list-group-item {
+            min-height: 40px;
+            display: flex;
+            align-items: center;
         }
 
         .list-group-item a {
@@ -50,7 +55,7 @@
             <div class="card shadow">
                 <div class="card-header bg-success text-white">🏆 مشتریان برتر</div>
                 <ul class="list-group list-group-flush scroll-list">
-                    {% for buyer in top_buyers|slice:":10" %}
+                    {% for buyer in top_buyers %}
                         <li class="list-group-item">
                             <a href="{% url 'buyer_detail' buyer.customer__id %}">
                                 {{ buyer.customer__first_name }} {{ buyer.customer__last_name }} - تعداد خرید: {{ buyer.total_purchases }}
@@ -66,7 +71,7 @@
             <div class="card shadow">
                 <div class="card-header bg-info text-white">💡 بیشترین محصول خریداری‌شده</div>
                 <ul class="list-group list-group-flush scroll-list">
-                    {% for item in top_products|slice:":10" %}
+                    {% for item in top_products %}
                         <li class="list-group-item">
                             {{ item.buyer_name }}: {{ item.top_product_name }} ({{ item.top_product_amount }})
                         </li>
@@ -82,7 +87,7 @@
             <div class="card shadow ">
                 <div class="card-header bg-warning text-dark">🕸 مشتریان بدون خرید</div>
                 <ul class="list-group list-group-flush scroll-list">
-                    {% for buyer in inactive_buyers|slice:":10" %}
+                    {% for buyer in inactive_buyers %}
                         <li class="list-group-item">
                             <a href="{% url 'buyer_detail' buyer.id %}">
                                 {{ buyer.first_name }} {{ buyer.last_name }}
@@ -100,7 +105,7 @@
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">❤️ مشتریان وفادار</div>
                 <ul class="list-group list-group-flush scroll-list">
-                    {% for buyer in loyal_buyers|slice:":10" %}
+                    {% for buyer in loyal_buyers %}
                         <li class="list-group-item">
                             <a href="{% url 'buyer_detail' buyer.customer__id %}">
                                 {{ buyer.customer__first_name }} {{ buyer.customer__last_name }}
@@ -151,5 +156,6 @@
 </script>
 
 </body>
-</html>
+
+
 {% endblock %}
