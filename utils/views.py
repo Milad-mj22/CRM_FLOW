@@ -87,6 +87,7 @@ def import_buyers_csv(request):
                 if buyer:
 
                     buyer.phone_number = phone_number
+                    buyer.created_by = request.user
                     buyer.save()
                     updated_count += 1
                     updated_names.append(f'{first_name} {last_name} {phone_number}')
@@ -103,7 +104,8 @@ def import_buyers_csv(request):
                                     first_name=first_name,
                                     last_name=last_name,
                                     phone_number=phone_number,
-                                    gender = gender
+                                    gender = gender,
+                                    created_by = request.user
                                 )
 
                                 if gender =='male':
@@ -118,6 +120,7 @@ def import_buyers_csv(request):
                             first_name=first_name,
                             last_name=last_name,
                             phone_number=phone_number,
+                            created_by = request.user
                         )
 
 

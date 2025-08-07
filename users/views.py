@@ -82,6 +82,19 @@ BACKEND_ENDPOINT = 'http://127.0.0.1:8000'
 
 from django.contrib.auth.views import LogoutView
 
+def clean_buyer_names(buyers):
+    try:
+        for buyer in buyers:
+
+            buyer.first_name = buyer.first_name.replace('�','')
+            buyer.last_name = buyer.last_name.replace('�','')
+            full_name = f"{buyer.first_name} {buyer.last_name or ''}"
+            buyer.short_name = full_name[:40] + ('…' if len(full_name) > 50 else '')
+    except:    
+        return buyers
+
+    return buyers
+
 
 
 
@@ -2206,14 +2219,18 @@ def no_access(request):
 
 from .models import Buyer
 from .forms import BuyerForm
-
+@login_required
 def add_buyer(request):
     if request.method == 'POST':
         form = BuyerForm(request.POST)
         buyer_attributes = BuyerAttribute.objects.all()
 
         if form.is_valid():
-            buyer = form.save()
+
+            buyer = form.save(commit=False)
+            buyer.created_by = request.user  # 👈 ست کردن کاربر لاگین شده
+            buyer.save()
+
             for attr in buyer_attributes:
                 field_name = f"attr_{attr.id}"
 
@@ -2306,7 +2323,12 @@ from django.db.models import Q
 
 def buyer_list(request):
     query = request.GET.get('q')
-    buyers = Buyer.objects.all().order_by('-id').filter(is_active=True)
+
+    if request.user.profile.job_position.name =='CEO':
+        buyers = Buyer.objects.all().order_by('-id').filter(is_active=True)
+
+    else:
+        buyers = Buyer.objects.all().order_by('-id').filter(is_active=True,created_by = request.user)
 
     if query:
         buyers = buyers.filter(
@@ -2318,6 +2340,9 @@ def buyer_list(request):
         ).distinct()
 
         buyers = buyers.filter(is_active=True)
+
+
+    buyers = clean_buyer_names(buyers=buyers)
 
 
     try:
@@ -2554,6 +2579,8 @@ def buyer_detail(request, buyer_id):
     activities = BuyerActivity.get_activity_type_label_icon_list()
 
 
+    buyer = clean_buyer_names(buyer )
+
     
     return render(request, 'Buyer/buyer_history.html', {
         'buyer': buyer,
@@ -2636,6 +2663,15 @@ def show_factor(request, pk):
 #     reports = DailyReports.objects.filter(user=request.user).order_by('-date', '-created_at')
 #     types = ReportTitles.objects.all()
 #     return render(request, 'users/daily_report.html', {'form': form, 'reports': reports,'types':types})
+import jdatetime
+
+def convert_jalali_to_gregorian(jalali_date_str):
+    # فرض: فرمت ورودی '۱۴۰۴/۰۵/۱۴' و به صورت فارسی
+    jalali_date_str = jalali_date_str.translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹', '0123456789'))
+    year, month, day = map(int, jalali_date_str.split('/'))
+    gregorian_date = jdatetime.date(year, month, day).togregorian()
+    return gregorian_date.strftime('%Y-%m-%d')
+
 
 
 @login_required
@@ -2644,8 +2680,30 @@ def daily_report_view(request):
     last_report = reports.first()
 
     # داده‌هایی که می‌خواهی به قالب بفرستی
-    buyers = Buyer.objects.filter(is_active=True)
+    buyers = Buyer.objects.filter(is_active=True , created_by = request.user  )
+    countries = buyers.values_list('nationality__name', flat=True).distinct()
+
     activities = BuyerActivity.get_activity_type_label_icon_list()  # یا هر مدل مرتبط
+
+    # Get filters
+    search_query = request.GET.get('search')
+    selected_country = request.GET.get('country')
+
+    # Apply filters
+    if search_query:
+        buyers = buyers.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        )
+
+    if selected_country:
+        if selected_country =='None':
+            selected_country = None
+        buyers = buyers.filter(nationality__name=selected_country)
+
+    buyers = clean_buyer_names(buyers=buyers)
+
+
 
     if request.method == 'POST':
         buyer_id = request.POST.get('buyer')
@@ -2659,6 +2717,8 @@ def daily_report_view(request):
             buyer = get_object_or_404(Buyer, id=buyer_id)
 
             if next_followup != '':
+
+                next_followup = convert_jalali_to_gregorian(next_followup)
             
                 BuyerActivity.objects.create(
                     title = title,
@@ -2686,6 +2746,11 @@ def daily_report_view(request):
         'last_report_id': last_report.id if last_report else None,
         'buyers': buyers,
         'activities': activities,
+        'countries': countries,
+        'query_name': search_query,
+        'query_country': selected_country,
+
+
     })
 
 

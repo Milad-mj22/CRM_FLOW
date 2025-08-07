@@ -1,11 +1,42 @@
 {% extends "users/base.html" %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
 <head>
   <title>گزارش روزانه</title>
   <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/persian.datepicker.css' %}">
+<script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+
+<script src="{% static 'js/persian.date.js' %}"></script>
+<script src="{% static 'js/persian.datepicker.js' %}"></script>
+<script>
+  $(document).ready(function () {
+        // روی تمام inputهایی که id با "datepicker_" شروع می‌شه، تقویم اعمال کن
+        $("input[id^='datepicker_']").each(function () {
+            $(this).persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false
+            });
+        });
+
+        // هنگام ارسال فرم، همه تاریخ‌ها را به میلادی تبدیل کن
+        $('form').on('submit', function () {
+            $("input[id^='datepicker_']").each(function () {
+                let jalaliDate = $(this).val();
+                if (jalaliDate) {
+                    let pd = new persianDate(jalaliDate).toGregorian();
+                    let gregorian = `${pd.year}-${String(pd.month).padStart(2, '0')}-${String(pd.day).padStart(2, '0')}`;
+                    $(this).val(gregorian);
+                }
+            });
+        });
+    });
+</script>
+
   <style>
     body {
       background: #f4f7fa;
@@ -52,18 +83,45 @@
 
   <!-- فرم ثبت گزارش -->
   <div class="card mb-4 p-4">
+
+
+<form method="get" class="row mb-4">
+  <div class="col-md-5">
+    <input type="text" name="search" class="form-control" placeholder=" جستجو بر اساس نام مشتری" value="{{ request.GET.search }}">
+  </div>
+  <div class="col-md-5" style="text-align: right; display: block;">
+    <label class="form-label">جستجو بر اساس نام کشور : </label>
+    <select name="country" class="form-select">
+      <option value="">همه کشورها</option>
+      {% for country in countries %}
+        <option value="{{ country }}" {% if request.GET.country == country %}selected{% endif %}>{{ country }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-outline-primary w-100">جستجو</button>
+  </div>
+</form>
+<hr>
+    
     <form method="post">
       {% csrf_token %}
+
+
+
+
       <div class="row mb-3" >
         <div class="col-md-6 mb-3" style="text-align: right; display: block;">
           <label for="buyer" class="form-label" >مشتری : </label>
           <select id="buyer" name="buyer" class="form-select" required>
             <option value="">انتخاب کنید</option>
             {% for buyer in buyers %}
-              <option value="{{ buyer.id }}">{{ buyer.first_name }} {{ buyer.last_name }}</option>
+              <option value="{{ buyer.id }}">{{ buyer.short_name }}</option>
             {% endfor %}
           </select>
         </div>
+      </div>  
+      <div class="row mb-3" >
 
         <div class="col-md-6 mb-3" style="text-align: right; display: block;">
           <label for="activity_type" class="form-label">نوع فعالیت</label>
@@ -86,7 +144,15 @@
 
         <div class="col-md-6 mb-3">
           <label class="form-label" style="text-align: right; display: block;">پیگیری بعدی</label>
-          <input type="date" name="next_followup" class="form-control">
+                
+          
+          <input type="text"
+                        id="datepicker_{{ attr.id }}"
+                        name="next_followup"
+                        class="form-control"
+                        placeholder="تاریخ را انتخاب کنید"
+                        value="{{ value|to_jalali }}"
+                        {% if attr.required %}required{% endif %}>
         </div>
       </div>
 
@@ -96,7 +162,7 @@
       </div>
 
       <button type="submit" class="btn btn-primary w-100 fw-bold">
-        <i class="fa fa-save me-2"></i>ثبت گزارش
+        <i class="fa fa-save me-2"></i> ثبت گزارش 
       </button>
     </form>
   </div>

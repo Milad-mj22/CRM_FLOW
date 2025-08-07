@@ -615,6 +615,13 @@ class Buyer(models.Model):
     nation = models.CharField(max_length=50, verbose_name='شهر', blank=True, null=True)
     address = models.TextField(verbose_name='آدرس', blank=True, null=True)
 
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="کاربر ثبت‌کننده"
+    )
 
 
     details = models.TextField(verbose_name='توضیحات تکمیلی', blank=True, null=True)
