@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     'mines',
     'dashboard',
     'utils',
+    'TasksManager'
 
 ]
 

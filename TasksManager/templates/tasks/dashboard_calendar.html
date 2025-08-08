@@ -1,0 +1,236 @@
+{% extends "users/base.html" %}
+{% block content %}
+{% load static %}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<link rel="stylesheet" href="{% static 'css/fullcalendar5.11.3_main.min.css' %}">
+<script src="{% static 'js/fullcalendar5.11.3_main.min.js' %}"></script>
+
+<style>
+  body {
+    background-color: #f8f9fa;
+    font-family: "Vazirmatn", sans-serif;
+  }
+
+  #calendar {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin: 40px auto;
+    max-width: 1100px;
+  }
+
+  .modal-content {
+    border-radius: 16px;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  .card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover {
+    transform: scale(1.01);
+  }
+
+  .card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #343a40;
+  }
+
+  .card-text {
+    color: #6c757d;
+    font-size: 0.95rem;
+  }
+
+  .form-check-label {
+    font-weight: 500;
+  }
+
+  textarea.form-control {
+    border-radius: 10px;
+    resize: none;
+    font-size: 0.9rem;
+  }
+
+  button.btn-success {
+    border-radius: 12px;
+    padding: 6px 20px;
+    font-size: 0.9rem;
+  }
+
+  .btn-close {
+    margin: 0;
+  }
+
+  .modal-title {
+    font-weight: 600;
+    font-size: 1.3rem;
+  }
+
+  ul {
+    padding-left: 20px;
+    margin-top: 5px;
+  }
+
+  ul li {
+    font-size: 0.9rem;
+    color: #495057;
+  }
+
+  a {
+    text-decoration: none;
+    color: #0d6efd;
+    font-weight: 500;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<div id="calendar"></div>
+
+<!-- Modal -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content text-end">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="taskModalLabel">کارهای این روز</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Tasks will load here -->
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'fa',
+      direction: 'rtl',
+      height: 'auto',
+      themeSystem: 'standard',
+      eventDisplay: 'auto',
+      events: '/TasksManager/user-tasks/',
+
+      dateClick: function(info) {
+        const clickedDate = info.dateStr;
+
+        fetch('/TasksManager/user-tasks/')
+          .then(response => response.json())
+          .then(data => {
+            const tasks = data.filter(task => task.start === clickedDate);
+            let html = "";
+
+            if (tasks.length > 0) {
+              tasks.forEach(task => {
+                let commentsHtml = "";
+
+                if (task.comments && task.comments.length > 0) {
+                  commentsHtml = '<ul>';
+                  task.comments.forEach(c => {
+                    commentsHtml += `<li>(${c.created_date}) توسط: ${c.description} - ${c.created_by}</li>`;
+                  });
+                  commentsHtml += '</ul>';
+                } else {
+                  commentsHtml = '<p class="text-muted">نظری ثبت نشده است.</p>';
+                }
+
+                const buyerHtml = task.buyer && task.buyer.id
+                  ? `<a href="/buyers/details/${task.buyer.id}/" target="_blank">${task.buyer.username}</a>`
+                  : `<span class="text-danger">خریدار ثبت نشده</span>`;
+
+                html += `
+                  <div class="card mb-4">
+                    <div class="card-body">
+                      <h5 class="card-title">${task.title} - ${buyerHtml}</h5>
+                      <p class="card-text">تاریخ شروع: ${task.start}</p>
+                      <div class="form-check mt-2">
+                        <input class="form-check-input" style="margin-right:78px"  type="checkbox" id="done-${task.id}" ${task.is_done ? 'checked' : ''}>
+                        <label class="form-check-label" for="done-${task.id}">انجام شده؟</label>
+                      </div>
+                      <div class="mt-3">
+                        <label for="comment-${task.id}" class="form-label">نظر جدید:</label>
+                        <textarea class="form-control" id="comment-${task.id}" rows="2" placeholder="نظر خود را وارد کنید..."></textarea>
+                      </div>
+                      <div class="mt-3">
+                        <strong>نظرات ثبت‌شده:</strong>
+                        ${commentsHtml}
+                      </div>
+                      <button class="btn btn-success mt-3" onclick="saveTask(${task.id})">ذخیره</button>
+                    </div>
+                  </div>
+                `;
+              });
+            } else {
+              html = "<p class='text-center text-muted'>هیچ کاری برای این روز وجود ندارد.</p>";
+            }
+
+            document.getElementById('modalBody').innerHTML = html;
+            const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+            modal.show();
+          });
+      }
+    });
+
+    calendar.render();
+  });
+
+  function saveTask(taskId) {
+    const isDone = document.getElementById(`done-${taskId}`).checked;
+    const comment = document.getElementById(`comment-${taskId}`).value;
+
+    fetch(`/TasksManager/update-task/${taskId}/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({
+        done: isDone,
+        comment: comment
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('ذخیره شد.');
+        location.reload();
+      } else {
+        alert('خطا در ذخیره.');
+      }
+    });
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
+{% endblock %}

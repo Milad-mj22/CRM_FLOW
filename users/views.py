@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from khayyam import JalaliDatetime
 
 from StoneFlow.models import PreInvoice, PreInvoiceItem
+from TasksManager.views import create_task
 from order_flow.models import MaterialUsage, OrderStep
 from users.EntryModule.EntryUtils import get_latest_exit, is_user_in , UserWorkTimeManager
 from users.utils.utils import send_push_notification
@@ -2647,22 +2648,7 @@ def show_factor(request, pk):
     return render(request, 'preinvoice/detail.html', {'preinvoice': invoice})
 
 
-# views.py
-# @login_required
-# def daily_report_view(request):
-#     if request.method == 'POST':
-#         form = DailyReportForm(request.POST)
-#         if form.is_valid():
-#             report = form.save(commit=False)
-#             report.user = request.user
-#             report.save()
-#             return redirect('daily_report')
-#     else:
-#         form = DailyReportForm()
 
-#     reports = DailyReports.objects.filter(user=request.user).order_by('-date', '-created_at')
-#     types = ReportTitles.objects.all()
-#     return render(request, 'users/daily_report.html', {'form': form, 'reports': reports,'types':types})
 import jdatetime
 
 def convert_jalali_to_gregorian(jalali_date_str):
@@ -2737,6 +2723,9 @@ def daily_report_view(request):
                     description=description,
                     created_by=request.user,  # if your model supports it
                 )
+
+            create_task(created_by=request.user,title=title,description=f'{buyer.first_name} {buyer.last_name} :  {activity_type} - {description}',due_date=next_followup,assigned_to=request.user ,buyer=buyer )
+            
 
 
             return redirect('buyer_detail', buyer_id=buyer.id)
