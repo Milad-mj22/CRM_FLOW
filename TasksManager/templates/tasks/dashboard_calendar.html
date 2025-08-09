@@ -233,4 +233,45 @@
     return cookieValue;
   }
 </script>
+
+
+
+
+
+
+<hr>
+<h4 class="mt-5">کارهای انجام‌نشده (به ترتیب تاریخ)</h4>
+<div id="undone-tasks-container" class="mt-3"></div>
+
+
+<script>
+
+
+function renderUndoneTasks(tasks) {
+  const container = document.getElementById('undone-tasks-container');
+  container.innerHTML = '';
+
+  tasks.forEach(task => {
+    container.innerHTML += `
+      <div class="card mb-2 border-warning">
+        <div class="card-body">
+          <h5 class="card-title">
+            ${task.title}
+            ${task.buyer ? `<a href="/buyers/${task.buyer.id}/">${task.buyer.username}</a>` : '<span>خریدار مشخص نشده</span>'}
+          </h5>
+          <p class="card-text">تاریخ سررسید: ${task.due_date}</p>
+        </div>
+      </div>
+    `;
+  });
+}
+
+renderUndoneTasks(undone_data);
+
+
+</script>
+
+
+
+
 {% endblock %}

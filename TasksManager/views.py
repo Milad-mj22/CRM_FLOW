@@ -45,7 +45,21 @@ def user_tasks_json(request):
             'comments': comment_list
         })
 
-    return JsonResponse(data, safe=False)
+    undone_data = []
+    for task in tasks:
+        undone_data.append({
+            'id': task.id,
+            'title': task.title,
+            'due_date': task.due_date.strftime('%Y-%m-%d'),
+            'buyer': {
+                'id': task.buyer.id,
+                'username': task.buyer.first_name
+            } if task.buyer else None,
+        })
+    # data['undone_data'] = undone_data
+    # data = [data,undone_data]
+
+    return JsonResponse(data=data, safe=False)
 
 @login_required
 def calendar_view(request):
